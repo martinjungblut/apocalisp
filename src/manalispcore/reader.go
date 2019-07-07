@@ -15,11 +15,11 @@ type reader struct {
 	parensCount    int
 	parensPosition int
 
-	bracesCount    int
-	bracesPosition int
+	bracketsCount    int
+	bracketsPosition int
 }
 
-func (r *reader) check() error {
+func (r *reader) readAhead() error {
 	if r.parensPosition < len(r.tokens) {
 		token := r.tokens[r.parensPosition]
 
@@ -28,9 +28,9 @@ func (r *reader) check() error {
 		} else if token == ")" {
 			r.parensCount--
 		} else if token == "[" {
-			r.bracesCount++
+			r.bracketsCount++
 		} else if token == "]" {
-			r.bracesCount--
+			r.bracketsCount--
 		}
 	}
 
@@ -41,20 +41,20 @@ func (r *reader) check() error {
 		return errors.New("unexpected EOF")
 	}
 
-	if r.bracesCount < 0 {
+	if r.bracketsCount < 0 {
 		return errors.New("unexpected ']'")
 	}
-	if (r.bracesPosition == len(r.tokens)) && r.bracesCount > 0 {
+	if (r.bracketsPosition == len(r.tokens)) && r.bracketsCount > 0 {
 		return errors.New("unexpected EOF")
 	}
 
 	r.parensPosition++
-	r.bracesPosition++
+	r.bracketsPosition++
 	return nil
 }
 
 func (r *reader) peek() (*string, error) {
-	err := r.check()
+	err := r.readAhead()
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (r *reader) peek() (*string, error) {
 }
 
 func (r *reader) next() (*string, error) {
-	err := r.check()
+	err := r.readAhead()
 	if err != nil {
 		return nil, err
 	}
@@ -104,6 +104,7 @@ type MalType struct {
 	_integer *int64
 	_symbol  *string
 	_list    *[]MalType
+	_vector  *[]MalType
 }
 
 func readForm(r *reader) (MalType, error) {
@@ -112,33 +113,55 @@ func readForm(r *reader) (MalType, error) {
 		return MalType{}, err
 	}
 
-	if token != nil && (*token == "(" || *token == "[") {
+	if token != nil && *token == "(" {
 		return readList(r)
+	} else if token != nil && *token == "[" {
+		return readVector(r)
 	} else {
 		return readAtom(r)
 	}
 }
 
 func readList(r *reader) (MalType, error) {
-	list := make([]MalType, 0)
+	sequence, err := readSequence(r)
+
+	if err != nil {
+		return MalType{}, err
+	} else {
+		return MalType{_list: sequence}, nil
+	}
+}
+
+func readVector(r *reader) (MalType, error) {
+	sequence, err := readSequence(r)
+
+	if err != nil {
+		return MalType{}, err
+	} else {
+		return MalType{_vector: sequence}, nil
+	}
+}
+
+func readSequence(r *reader) (*[]MalType, error) {
+	sequence := make([]MalType, 0)
 
 	for {
 		token, err := r.next()
 		if err != nil {
-			return MalType{}, err
+			return nil, err
 		} else if token == nil {
 			break
 		} else if token != nil {
 			t, err := readForm(r)
 			if err != nil {
-				return MalType{}, err
+				return nil, err
 			} else {
-				list = append(list, t)
+				sequence = append(sequence, t)
 			}
 		}
 	}
 
-	return MalType{_list: &list}, nil
+	return &sequence, nil
 }
 
 func readAtom(r *reader) (MalType, error) {
@@ -159,6 +182,19 @@ func readAtom(r *reader) (MalType, error) {
 	}
 }
 
+func sequenceOut(sequence *[]MalType, leftCharacter string, rightCharacter string) string {
+	tokens := make([]string, 0)
+
+	for _, maltype := range *sequence {
+		token := PrintStr(maltype)
+		if len(token) > 0 {
+			tokens = append(tokens, token)
+		}
+	}
+
+	return fmt.Sprintf("%s%s%s", leftCharacter, strings.Join(tokens, " "), rightCharacter)
+}
+
 func ReadStr(sexpr string) (MalType, error) {
 	return readForm(&reader{
 		position: 0,
@@ -172,15 +208,9 @@ func PrintStr(t MalType) string {
 	} else if t._symbol != nil {
 		return *t._symbol
 	} else if t._list != nil {
-		tokens := make([]string, 0)
-		for _, _type := range *t._list {
-			token := PrintStr(_type)
-			if len(token) > 0 {
-				tokens = append(tokens, token)
-			}
-		}
-
-		return fmt.Sprintf("(%s)", strings.Join(tokens, " "))
+		return sequenceOut(t._list, "(", ")")
+	} else if t._vector != nil {
+		return sequenceOut(t._vector, "[", "]")
 	} else {
 		return ""
 	}
