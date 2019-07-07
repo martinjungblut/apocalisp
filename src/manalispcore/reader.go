@@ -12,19 +12,18 @@ type reader struct {
 	position int
 	tokens   []string
 
-	parensCount    int
-	parensPosition int
+	parensCount   int
+	bracketsCount int
+	bracesCount   int
 
-	bracketsCount    int
-	bracketsPosition int
+	foundString bool
 
-	bracesCount    int
-	bracesPosition int
+	readAheadPosition int
 }
 
 func (r *reader) readAhead() error {
-	if r.parensPosition < len(r.tokens) {
-		token := r.tokens[r.parensPosition]
+	if r.readAheadPosition < len(r.tokens) {
+		token := r.tokens[r.readAheadPosition]
 
 		if token == "(" {
 			r.parensCount++
@@ -38,33 +37,37 @@ func (r *reader) readAhead() error {
 			r.bracesCount++
 		} else if token == "}" {
 			r.bracesCount--
+		} else if token == "\"" {
+			r.foundString = !r.foundString
+		} else if strings.HasPrefix(token, "\"") && !strings.HasSuffix(token, "\"") {
+			return errors.New("unexpected EOF")
 		}
+	} else if r.foundString {
+		return errors.New("unexpected EOF")
 	}
 
 	if r.parensCount < 0 {
 		return errors.New("unexpected ')'")
 	}
-	if (r.parensPosition == len(r.tokens)) && r.parensCount > 0 {
+	if (r.readAheadPosition == len(r.tokens)) && r.parensCount > 0 {
 		return errors.New("unexpected EOF")
 	}
 
 	if r.bracketsCount < 0 {
 		return errors.New("unexpected ']'")
 	}
-	if (r.bracketsPosition == len(r.tokens)) && r.bracketsCount > 0 {
+	if (r.readAheadPosition == len(r.tokens)) && r.bracketsCount > 0 {
 		return errors.New("unexpected EOF")
 	}
 
 	if r.bracesCount < 0 {
 		return errors.New("unexpected '}'")
 	}
-	if (r.bracesPosition == len(r.tokens)) && r.bracesCount > 0 {
+	if (r.readAheadPosition == len(r.tokens)) && r.bracesCount > 0 {
 		return errors.New("unexpected EOF")
 	}
 
-	r.parensPosition++
-	r.bracketsPosition++
-	r.bracesPosition++
+	r.readAheadPosition++
 	return nil
 }
 
@@ -119,8 +122,12 @@ func readForm(r *reader) (MalType, error) {
 		return readHashmap(r)
 	} else if token != nil && *token == "'" {
 		return readQuote(r)
+	} else if token != nil && *token == "~" {
+		return readUnquote(r)
 	} else if token != nil && *token == "`" {
 		return readQuasiquote(r)
+	} else if token != nil && *token == "@" {
+		return readDeref(r)
 	} else {
 		return readAtom(r)
 	}
@@ -207,10 +214,9 @@ func readQuote(r *reader) (MalType, error) {
 		return MalType{}, err
 	}
 
-	quote := "quote"
-
+	symbol := "quote"
 	sequence := make([]MalType, 0)
-	sequence = append(sequence, MalType{_symbol: &quote})
+	sequence = append(sequence, MalType{_symbol: &symbol})
 	sequence = append(sequence, form)
 
 	return MalType{_list: &sequence}, nil
@@ -227,10 +233,47 @@ func readQuasiquote(r *reader) (MalType, error) {
 		return MalType{}, err
 	}
 
-	quasiquote := "quasiquote"
-
+	symbol := "quasiquote"
 	sequence := make([]MalType, 0)
-	sequence = append(sequence, MalType{_symbol: &quasiquote})
+	sequence = append(sequence, MalType{_symbol: &symbol})
+	sequence = append(sequence, form)
+
+	return MalType{_list: &sequence}, nil
+}
+
+func readUnquote(r *reader) (MalType, error) {
+	_, err := r.next()
+	if err != nil {
+		return MalType{}, err
+	}
+
+	form, err := readForm(r)
+	if err != nil {
+		return MalType{}, err
+	}
+
+	symbol := "unquote"
+	sequence := make([]MalType, 0)
+	sequence = append(sequence, MalType{_symbol: &symbol})
+	sequence = append(sequence, form)
+
+	return MalType{_list: &sequence}, nil
+}
+
+func readDeref(r *reader) (MalType, error) {
+	_, err := r.next()
+	if err != nil {
+		return MalType{}, err
+	}
+
+	form, err := readForm(r)
+	if err != nil {
+		return MalType{}, err
+	}
+
+	symbol := "deref"
+	sequence := make([]MalType, 0)
+	sequence = append(sequence, MalType{_symbol: &symbol})
 	sequence = append(sequence, form)
 
 	return MalType{_list: &sequence}, nil
@@ -269,8 +312,9 @@ func tokenize(sexpr string) []string {
 
 func ReadStr(sexpr string) (MalType, error) {
 	return readForm(&reader{
-		position: 0,
-		tokens:   tokenize(sexpr),
+		position:    0,
+		tokens:      tokenize(sexpr),
+		foundString: false,
 	})
 }
 
