@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func READ(sexpr string) manalispcore.MalType {
+func READ(sexpr string) (manalispcore.MalType, error) {
 	return manalispcore.ReadStr(sexpr)
 }
 
@@ -20,8 +20,14 @@ func EVAL(_type manalispcore.MalType) manalispcore.MalType {
 	return _type
 }
 
-func rep(sexpr string) string {
-	return PRINT(EVAL(READ(sexpr)))
+func rep(sexpr string) (string, error) {
+	t, err := READ(sexpr)
+	if err != nil {
+		return "", err
+	}
+
+	evaluated := EVAL(t)
+	return PRINT(evaluated), nil
 }
 
 func main() {
@@ -54,7 +60,13 @@ func main() {
 	for {
 		if sexpr, err := line.Prompt("user> "); err == nil {
 			line.AppendHistory(sexpr)
-			fmt.Printf("%s\n", rep(sexpr))
+
+			output, err := rep(sexpr)
+			if err == nil {
+				fmt.Printf("%s\n", output)
+			} else {
+				fmt.Printf("%s\n", err.Error())
+			}
 		} else {
 			fmt.Print("\nFarewell!\n")
 			break

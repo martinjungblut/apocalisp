@@ -1,8 +1,8 @@
 package manalispcore
 
 import (
+	"errors"
 	"fmt"
-	// "github.com/glenn-brown/golang-pkg-pcre/src/pkg/pcre"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,50 +11,85 @@ import (
 type reader struct {
 	position int
 	tokens   []string
+
+	parensCount    int
+	parensPosition int
+
+	bracesCount    int
+	bracesPosition int
 }
 
-func (r *reader) peek() *string {
+func (r *reader) check() error {
+	if r.parensPosition < len(r.tokens) {
+		token := r.tokens[r.parensPosition]
+
+		if token == "(" {
+			r.parensCount++
+		} else if token == ")" {
+			r.parensCount--
+		} else if token == "[" {
+			r.bracesCount++
+		} else if token == "]" {
+			r.bracesCount--
+		}
+	}
+
+	if r.parensCount < 0 {
+		return errors.New("unexpected ')'")
+	}
+	if (r.parensPosition == len(r.tokens)) && r.parensCount > 0 {
+		return errors.New("unexpected EOF")
+	}
+
+	if r.bracesCount < 0 {
+		return errors.New("unexpected ']'")
+	}
+	if (r.bracesPosition == len(r.tokens)) && r.bracesCount > 0 {
+		return errors.New("unexpected EOF")
+	}
+
+	r.parensPosition++
+	r.bracesPosition++
+	return nil
+}
+
+func (r *reader) peek() (*string, error) {
+	err := r.check()
+	if err != nil {
+		return nil, err
+	}
+
 	if r.position < len(r.tokens) {
-		return &r.tokens[r.position]
+		token := &(r.tokens[r.position])
+		return token, nil
 	} else {
-		return nil
+		return nil, nil
 	}
 }
 
-func (r *reader) next() *string {
+func (r *reader) next() (*string, error) {
+	err := r.check()
+	if err != nil {
+		return nil, err
+	}
+
 	if r.position < len(r.tokens) {
 		token := &(r.tokens[r.position])
 		r.position++
-		return token
+		return token, nil
 	} else {
-		return nil
+		return nil, nil
 	}
 }
 
 func tokenize(sexpr string) []string {
-	// tokens := make([]string, 0)
+	results := make([]string, 0)
 
-	// regex := pcre.MustCompile(`[\s,]*(~@|[\[\]{}()'`+"`"+
-	// 	`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`+"`"+
-	// 	`,;)]*)`, pcre.MULTILINE)
-
-	// matcher := regex.MatcherString(sexpr, 0)
-	// for i := 1; i <= matcher.Groups(); i++ {
-	// 	token := matcher.GroupString(i)
-	// 	if len(token) > 0 {
-	// 		tokens = append(tokens, token)
-	// 	} else {
-	// 		break
-	// 	}
-	// }
-
-	// return tokens
-
-	results := make([]string, 0, 1)
 	// Work around lack of quoting in backtick
 	re := regexp.MustCompile(`[\s,]*(~@|[\[\]{}()'` + "`" +
 		`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"` + "`" +
 		`,;)]*)`)
+
 	for _, group := range re.FindAllStringSubmatch(sexpr, -1) {
 		if (group[1] == "") || (group[1][0] == ';') {
 			continue
@@ -71,42 +106,60 @@ type MalType struct {
 	_list    *[]MalType
 }
 
-func readForm(r *reader) MalType {
-	token := r.peek()
+func readForm(r *reader) (MalType, error) {
+	token, err := r.peek()
+	if err != nil {
+		return MalType{}, err
+	}
 
-	if token != nil && *token == "(" {
+	if token != nil && (*token == "(" || *token == "[") {
 		return readList(r)
 	} else {
 		return readAtom(r)
 	}
 }
 
-func readList(r *reader) MalType {
+func readList(r *reader) (MalType, error) {
 	list := make([]MalType, 0)
 
-	for token := r.next(); token != nil; token = r.next() {
-		list = append(list, readForm(r))
+	for {
+		token, err := r.next()
+		if err != nil {
+			return MalType{}, err
+		} else if token == nil {
+			break
+		} else if token != nil {
+			t, err := readForm(r)
+			if err != nil {
+				return MalType{}, err
+			} else {
+				list = append(list, t)
+			}
+		}
 	}
 
-	return MalType{_list: &list}
+	return MalType{_list: &list}, nil
 }
 
-func readAtom(r *reader) MalType {
-	token := r.peek()
+func readAtom(r *reader) (MalType, error) {
+	token, err := r.peek()
+	if err != nil {
+		return MalType{}, err
+	}
 
-	if token != nil && *token != ")" {
+	if token != nil && (*token != ")" && *token != "]") {
 		i, err := strconv.ParseInt(*token, 10, 64)
 		if err == nil {
-			return MalType{_integer: &i}
+			return MalType{_integer: &i}, nil
 		}
 
-		return MalType{_symbol: token}
+		return MalType{_symbol: token}, nil
 	} else {
-		return MalType{}
+		return MalType{}, nil
 	}
 }
 
-func ReadStr(sexpr string) MalType {
+func ReadStr(sexpr string) (MalType, error) {
 	return readForm(&reader{
 		position: 0,
 		tokens:   tokenize(sexpr),
