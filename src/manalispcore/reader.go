@@ -17,6 +17,9 @@ type reader struct {
 
 	bracketsCount    int
 	bracketsPosition int
+
+	bracesCount    int
+	bracesPosition int
 }
 
 func (r *reader) readAhead() error {
@@ -31,6 +34,10 @@ func (r *reader) readAhead() error {
 			r.bracketsCount++
 		} else if token == "]" {
 			r.bracketsCount--
+		} else if token == "{" {
+			r.bracesCount++
+		} else if token == "}" {
+			r.bracesCount--
 		}
 	}
 
@@ -48,8 +55,16 @@ func (r *reader) readAhead() error {
 		return errors.New("unexpected EOF")
 	}
 
+	if r.bracesCount < 0 {
+		return errors.New("unexpected '}'")
+	}
+	if (r.bracesPosition == len(r.tokens)) && r.bracesCount > 0 {
+		return errors.New("unexpected EOF")
+	}
+
 	r.parensPosition++
 	r.bracketsPosition++
+	r.bracesPosition++
 	return nil
 }
 
@@ -82,29 +97,12 @@ func (r *reader) next() (*string, error) {
 	}
 }
 
-func tokenize(sexpr string) []string {
-	results := make([]string, 0)
-
-	// Work around lack of quoting in backtick
-	re := regexp.MustCompile(`[\s,]*(~@|[\[\]{}()'` + "`" +
-		`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"` + "`" +
-		`,;)]*)`)
-
-	for _, group := range re.FindAllStringSubmatch(sexpr, -1) {
-		if (group[1] == "") || (group[1][0] == ';') {
-			continue
-		}
-		results = append(results, group[1])
-	}
-
-	return results
-}
-
 type MalType struct {
 	_integer *int64
 	_symbol  *string
 	_list    *[]MalType
 	_vector  *[]MalType
+	_hashmap *[]MalType
 }
 
 func readForm(r *reader) (MalType, error) {
@@ -117,6 +115,12 @@ func readForm(r *reader) (MalType, error) {
 		return readList(r)
 	} else if token != nil && *token == "[" {
 		return readVector(r)
+	} else if token != nil && *token == "{" {
+		return readHashmap(r)
+	} else if token != nil && *token == "'" {
+		return readQuote(r)
+	} else if token != nil && *token == "`" {
+		return readQuasiquote(r)
 	} else {
 		return readAtom(r)
 	}
@@ -139,6 +143,16 @@ func readVector(r *reader) (MalType, error) {
 		return MalType{}, err
 	} else {
 		return MalType{_vector: sequence}, nil
+	}
+}
+
+func readHashmap(r *reader) (MalType, error) {
+	sequence, err := readSequence(r)
+
+	if err != nil {
+		return MalType{}, err
+	} else {
+		return MalType{_hashmap: sequence}, nil
 	}
 }
 
@@ -170,7 +184,7 @@ func readAtom(r *reader) (MalType, error) {
 		return MalType{}, err
 	}
 
-	if token != nil && (*token != ")" && *token != "]") {
+	if token != nil && (*token != ")" && *token != "]" && *token != "}" && *token != "'" && *token != "`") {
 		i, err := strconv.ParseInt(*token, 10, 64)
 		if err == nil {
 			return MalType{_integer: &i}, nil
@@ -180,6 +194,46 @@ func readAtom(r *reader) (MalType, error) {
 	} else {
 		return MalType{}, nil
 	}
+}
+
+func readQuote(r *reader) (MalType, error) {
+	_, err := r.next()
+	if err != nil {
+		return MalType{}, err
+	}
+
+	form, err := readForm(r)
+	if err != nil {
+		return MalType{}, err
+	}
+
+	quote := "quote"
+
+	sequence := make([]MalType, 0)
+	sequence = append(sequence, MalType{_symbol: &quote})
+	sequence = append(sequence, form)
+
+	return MalType{_list: &sequence}, nil
+}
+
+func readQuasiquote(r *reader) (MalType, error) {
+	_, err := r.next()
+	if err != nil {
+		return MalType{}, err
+	}
+
+	form, err := readForm(r)
+	if err != nil {
+		return MalType{}, err
+	}
+
+	quasiquote := "quasiquote"
+
+	sequence := make([]MalType, 0)
+	sequence = append(sequence, MalType{_symbol: &quasiquote})
+	sequence = append(sequence, form)
+
+	return MalType{_list: &sequence}, nil
 }
 
 func sequenceOut(sequence *[]MalType, leftCharacter string, rightCharacter string) string {
@@ -193,6 +247,24 @@ func sequenceOut(sequence *[]MalType, leftCharacter string, rightCharacter strin
 	}
 
 	return fmt.Sprintf("%s%s%s", leftCharacter, strings.Join(tokens, " "), rightCharacter)
+}
+
+func tokenize(sexpr string) []string {
+	results := make([]string, 0)
+
+	// Work around lack of quoting in backtick
+	re := regexp.MustCompile(`[\s,]*(~@|[\[\]{}()'` + "`" +
+		`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"` + "`" +
+		`,;)]*)`)
+
+	for _, group := range re.FindAllStringSubmatch(sexpr, -1) {
+		if (group[1] == "") || (group[1][0] == ';') {
+			continue
+		}
+		results = append(results, group[1])
+	}
+
+	return results
 }
 
 func ReadStr(sexpr string) (MalType, error) {
@@ -211,6 +283,8 @@ func PrintStr(t MalType) string {
 		return sequenceOut(t._list, "(", ")")
 	} else if t._vector != nil {
 		return sequenceOut(t._vector, "[", "]")
+	} else if t._hashmap != nil {
+		return sequenceOut(t._hashmap, "{", "}")
 	} else {
 		return ""
 	}
