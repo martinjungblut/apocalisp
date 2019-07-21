@@ -71,17 +71,11 @@ func (r *reader) readAhead() error {
 	return nil
 }
 
-func (r *reader) peek() (*string, error) {
-	err := r.readAhead()
-	if err != nil {
-		return nil, err
-	}
-
+func (r *reader) peek() *string {
 	if r.position < len(r.tokens) {
-		token := &(r.tokens[r.position])
-		return token, nil
+		return &(r.tokens[r.position])
 	} else {
-		return nil, nil
+		return nil
 	}
 }
 
@@ -150,6 +144,8 @@ func readForm(r *reader) (MalType, error) {
 		return readQuasiquote(r)
 	} else if token != nil && *token == "@" {
 		return readDeref(r)
+	} else if token != nil && *token == "~@" {
+		return readSpliceUnquote(r)
 	} else if token != nil && *token != ")" && *token != "]" && *token != "}" {
 		return readAtom(token)
 	} else {
@@ -255,6 +251,20 @@ func readUnquote(r *reader) (MalType, error) {
 	return MalType{_list: &sequence}, nil
 }
 
+func readSpliceUnquote(r *reader) (MalType, error) {
+	form, err := readForm(r)
+	if err != nil {
+		return MalType{}, err
+	}
+
+	symbol := "splice-unquote"
+	sequence := make([]MalType, 0)
+	sequence = append(sequence, MalType{_symbol: &symbol})
+	sequence = append(sequence, form)
+
+	return MalType{_list: &sequence}, nil
+}
+
 func readDeref(r *reader) (MalType, error) {
 	form, err := readForm(r)
 	if err != nil {
@@ -283,28 +293,42 @@ func sequenceOut(sequence *[]MalType, leftCharacter string, rightCharacter strin
 }
 
 func tokenize(sexpr string) []string {
-	results := make([]string, 0)
-
-	// Work around lack of quoting in backtick
+	rawTokens := make([]string, 0)
 	re := regexp.MustCompile(`[\s,]*(~@|[\[\]{}()'` + "`" +
 		`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"` + "`" +
 		`,;)]*)`)
-
 	for _, group := range re.FindAllStringSubmatch(sexpr, -1) {
 		if (group[1] == "") || (group[1][0] == ';') {
 			continue
 		}
-		results = append(results, group[1])
+		rawTokens = append(rawTokens, group[1])
 	}
 
-	return results
+	tokens := make([]string, 0)
+	for index, rawToken := range rawTokens {
+		lToken := rawToken
+		rToken := rawToken
+		if index+1 < len(rawTokens) {
+			rToken = rawTokens[index+1]
+			if lToken == "~" && rToken == "@" {
+				tokens = append(tokens, "~@")
+			} else {
+				tokens = append(tokens, rawToken)
+			}
+		} else {
+			tokens = append(tokens, rawToken)
+		}
+	}
+
+	return tokens
 }
 
 func ReadStr(sexpr string) (MalType, error) {
 	return readForm(&reader{
-		position:    0,
-		tokens:      tokenize(sexpr),
-		foundString: false,
+		position:          0,
+		readAheadPosition: 0,
+		tokens:            tokenize(sexpr),
+		foundString:       false,
 	})
 }
 
