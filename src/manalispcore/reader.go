@@ -71,14 +71,6 @@ func (r *reader) readAhead() error {
 	return nil
 }
 
-func (r *reader) peek() *string {
-	if r.position < len(r.tokens) {
-		return &(r.tokens[r.position])
-	} else {
-		return nil
-	}
-}
-
 func (r *reader) next() (*string, error) {
 	err := r.readAhead()
 	if err != nil {
@@ -102,32 +94,10 @@ type MalType struct {
 	_hashmap *[]MalType
 }
 
-func (t MalType) isEmpty() bool {
-	empty := true
-
-	if t._integer != nil {
-		empty = false
-	}
-	if t._symbol != nil {
-		empty = false
-	}
-	if t._list != nil {
-		empty = false
-	}
-	if t._vector != nil {
-		empty = false
-	}
-	if t._hashmap != nil {
-		empty = false
-	}
-
-	return empty
-}
-
-func readForm(r *reader) (MalType, error) {
+func readForm(r *reader) (*MalType, error) {
 	token, err := r.next()
 	if err != nil {
-		return MalType{}, err
+		return nil, err
 	}
 
 	if token != nil && *token == "(" {
@@ -137,19 +107,19 @@ func readForm(r *reader) (MalType, error) {
 	} else if token != nil && *token == "{" {
 		return readHashmap(r)
 	} else if token != nil && *token == "'" {
-		return readQuote(r)
+		return readPrefixExpansion(r, "quote")
 	} else if token != nil && *token == "~" {
-		return readUnquote(r)
+		return readPrefixExpansion(r, "unquote")
 	} else if token != nil && *token == "`" {
-		return readQuasiquote(r)
+		return readPrefixExpansion(r, "quasiquote")
 	} else if token != nil && *token == "@" {
-		return readDeref(r)
+		return readPrefixExpansion(r, "deref")
 	} else if token != nil && *token == "~@" {
-		return readSpliceUnquote(r)
+		return readPrefixExpansion(r, "splice-unquote")
 	} else if token != nil && *token != ")" && *token != "]" && *token != "}" {
 		return readAtom(token)
 	} else {
-		return MalType{}, nil
+		return nil, nil
 	}
 }
 
@@ -160,8 +130,8 @@ func readSequence(r *reader) (*[]MalType, error) {
 		form, err := readForm(r)
 		if err != nil {
 			return nil, err
-		} else if !form.isEmpty() {
-			sequence = append(sequence, form)
+		} else if form != nil {
+			sequence = append(sequence, *form)
 		} else {
 			break
 		}
@@ -170,126 +140,56 @@ func readSequence(r *reader) (*[]MalType, error) {
 	return &sequence, nil
 }
 
-func readAtom(token *string) (MalType, error) {
+func readAtom(token *string) (*MalType, error) {
 	i, err := strconv.ParseInt(*token, 10, 64)
 	if err == nil {
-		return MalType{_integer: &i}, nil
+		return &MalType{_integer: &i}, nil
 	}
 
-	return MalType{_symbol: token}, nil
+	return &MalType{_symbol: token}, nil
 }
 
-func readList(r *reader) (MalType, error) {
+func readList(r *reader) (*MalType, error) {
 	sequence, err := readSequence(r)
 
 	if err != nil {
-		return MalType{}, err
+		return nil, err
 	} else {
-		return MalType{_list: sequence}, nil
+		return &MalType{_list: sequence}, nil
 	}
 }
 
-func readVector(r *reader) (MalType, error) {
+func readVector(r *reader) (*MalType, error) {
 	sequence, err := readSequence(r)
 
 	if err != nil {
-		return MalType{}, err
+		return nil, err
 	} else {
-		return MalType{_vector: sequence}, nil
+		return &MalType{_vector: sequence}, nil
 	}
 }
 
-func readHashmap(r *reader) (MalType, error) {
+func readHashmap(r *reader) (*MalType, error) {
 	sequence, err := readSequence(r)
 
 	if err != nil {
-		return MalType{}, err
+		return nil, err
 	} else {
-		return MalType{_hashmap: sequence}, nil
+		return &MalType{_hashmap: sequence}, nil
 	}
 }
 
-func readQuote(r *reader) (MalType, error) {
+func readPrefixExpansion(r *reader, symbol string) (*MalType, error) {
 	form, err := readForm(r)
 	if err != nil {
-		return MalType{}, err
+		return nil, err
 	}
 
-	symbol := "quote"
 	sequence := make([]MalType, 0)
 	sequence = append(sequence, MalType{_symbol: &symbol})
-	sequence = append(sequence, form)
+	sequence = append(sequence, *form)
 
-	return MalType{_list: &sequence}, nil
-}
-
-func readQuasiquote(r *reader) (MalType, error) {
-	form, err := readForm(r)
-	if err != nil {
-		return MalType{}, err
-	}
-
-	symbol := "quasiquote"
-	sequence := make([]MalType, 0)
-	sequence = append(sequence, MalType{_symbol: &symbol})
-	sequence = append(sequence, form)
-
-	return MalType{_list: &sequence}, nil
-}
-
-func readUnquote(r *reader) (MalType, error) {
-	form, err := readForm(r)
-	if err != nil {
-		return MalType{}, err
-	}
-
-	symbol := "unquote"
-	sequence := make([]MalType, 0)
-	sequence = append(sequence, MalType{_symbol: &symbol})
-	sequence = append(sequence, form)
-
-	return MalType{_list: &sequence}, nil
-}
-
-func readSpliceUnquote(r *reader) (MalType, error) {
-	form, err := readForm(r)
-	if err != nil {
-		return MalType{}, err
-	}
-
-	symbol := "splice-unquote"
-	sequence := make([]MalType, 0)
-	sequence = append(sequence, MalType{_symbol: &symbol})
-	sequence = append(sequence, form)
-
-	return MalType{_list: &sequence}, nil
-}
-
-func readDeref(r *reader) (MalType, error) {
-	form, err := readForm(r)
-	if err != nil {
-		return MalType{}, err
-	}
-
-	symbol := "deref"
-	sequence := make([]MalType, 0)
-	sequence = append(sequence, MalType{_symbol: &symbol})
-	sequence = append(sequence, form)
-
-	return MalType{_list: &sequence}, nil
-}
-
-func sequenceOut(sequence *[]MalType, leftCharacter string, rightCharacter string) string {
-	tokens := make([]string, 0)
-
-	for _, maltype := range *sequence {
-		token := PrintStr(maltype)
-		if len(token) > 0 {
-			tokens = append(tokens, token)
-		}
-	}
-
-	return fmt.Sprintf("%s%s%s", leftCharacter, strings.Join(tokens, " "), rightCharacter)
+	return &MalType{_list: &sequence}, nil
 }
 
 func tokenize(sexpr string) []string {
@@ -323,7 +223,7 @@ func tokenize(sexpr string) []string {
 	return tokens
 }
 
-func ReadStr(sexpr string) (MalType, error) {
+func ReadStr(sexpr string) (*MalType, error) {
 	return readForm(&reader{
 		position:          0,
 		readAheadPosition: 0,
@@ -332,17 +232,34 @@ func ReadStr(sexpr string) (MalType, error) {
 	})
 }
 
-func PrintStr(t MalType) string {
-	if t._integer != nil {
-		return fmt.Sprintf("%d", *t._integer)
-	} else if t._symbol != nil {
-		return *t._symbol
-	} else if t._list != nil {
-		return sequenceOut(t._list, "(", ")")
-	} else if t._vector != nil {
-		return sequenceOut(t._vector, "[", "]")
-	} else if t._hashmap != nil {
-		return sequenceOut(t._hashmap, "{", "}")
+func PrintStr(t *MalType) string {
+	seqToStr := func(seq *[]MalType, lChar string, rChar string) string {
+		tokens := make([]string, 0)
+
+		for _, maltype := range *seq {
+			token := PrintStr(&maltype)
+			if len(token) > 0 {
+				tokens = append(tokens, token)
+			}
+		}
+
+		return fmt.Sprintf("%s%s%s", lChar, strings.Join(tokens, " "), rChar)
+	}
+
+	if t != nil {
+		if t._integer != nil {
+			return fmt.Sprintf("%d", *t._integer)
+		} else if t._symbol != nil {
+			return *t._symbol
+		} else if t._list != nil {
+			return seqToStr(t._list, "(", ")")
+		} else if t._vector != nil {
+			return seqToStr(t._vector, "[", "]")
+		} else if t._hashmap != nil {
+			return seqToStr(t._hashmap, "{", "}")
+		} else {
+			return ""
+		}
 	} else {
 		return ""
 	}

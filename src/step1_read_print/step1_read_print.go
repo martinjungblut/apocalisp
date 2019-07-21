@@ -8,16 +8,16 @@ import (
 	"path/filepath"
 )
 
-func READ(sexpr string) (manalispcore.MalType, error) {
+func READ(sexpr string) (*manalispcore.MalType, error) {
 	return manalispcore.ReadStr(sexpr)
 }
 
-func PRINT(_type manalispcore.MalType) string {
-	return manalispcore.PrintStr(_type)
+func PRINT(malType *manalispcore.MalType) string {
+	return manalispcore.PrintStr(malType)
 }
 
-func EVAL(_type manalispcore.MalType) manalispcore.MalType {
-	return _type
+func EVAL(malType *manalispcore.MalType) *manalispcore.MalType {
+	return malType
 }
 
 func rep(sexpr string) (string, error) {
