@@ -108,8 +108,30 @@ type MalType struct {
 	_hashmap *[]MalType
 }
 
+func (t MalType) isEmpty() bool {
+	empty := true
+
+	if t._integer != nil {
+		empty = false
+	}
+	if t._symbol != nil {
+		empty = false
+	}
+	if t._list != nil {
+		empty = false
+	}
+	if t._vector != nil {
+		empty = false
+	}
+	if t._hashmap != nil {
+		empty = false
+	}
+
+	return empty
+}
+
 func readForm(r *reader) (MalType, error) {
-	token, err := r.peek()
+	token, err := r.next()
 	if err != nil {
 		return MalType{}, err
 	}
@@ -128,9 +150,37 @@ func readForm(r *reader) (MalType, error) {
 		return readQuasiquote(r)
 	} else if token != nil && *token == "@" {
 		return readDeref(r)
+	} else if token != nil && *token != ")" && *token != "]" && *token != "}" {
+		return readAtom(token)
 	} else {
-		return readAtom(r)
+		return MalType{}, nil
 	}
+}
+
+func readSequence(r *reader) (*[]MalType, error) {
+	sequence := make([]MalType, 0)
+
+	for {
+		form, err := readForm(r)
+		if err != nil {
+			return nil, err
+		} else if !form.isEmpty() {
+			sequence = append(sequence, form)
+		} else {
+			break
+		}
+	}
+
+	return &sequence, nil
+}
+
+func readAtom(token *string) (MalType, error) {
+	i, err := strconv.ParseInt(*token, 10, 64)
+	if err == nil {
+		return MalType{_integer: &i}, nil
+	}
+
+	return MalType{_symbol: token}, nil
 }
 
 func readList(r *reader) (MalType, error) {
@@ -163,52 +213,7 @@ func readHashmap(r *reader) (MalType, error) {
 	}
 }
 
-func readSequence(r *reader) (*[]MalType, error) {
-	sequence := make([]MalType, 0)
-
-	for {
-		token, err := r.next()
-		if err != nil {
-			return nil, err
-		} else if token == nil {
-			break
-		} else if token != nil {
-			t, err := readForm(r)
-			if err != nil {
-				return nil, err
-			} else {
-				sequence = append(sequence, t)
-			}
-		}
-	}
-
-	return &sequence, nil
-}
-
-func readAtom(r *reader) (MalType, error) {
-	token, err := r.peek()
-	if err != nil {
-		return MalType{}, err
-	}
-
-	if token != nil && (*token != ")" && *token != "]" && *token != "}" && *token != "'" && *token != "`") {
-		i, err := strconv.ParseInt(*token, 10, 64)
-		if err == nil {
-			return MalType{_integer: &i}, nil
-		}
-
-		return MalType{_symbol: token}, nil
-	} else {
-		return MalType{}, nil
-	}
-}
-
 func readQuote(r *reader) (MalType, error) {
-	_, err := r.next()
-	if err != nil {
-		return MalType{}, err
-	}
-
 	form, err := readForm(r)
 	if err != nil {
 		return MalType{}, err
@@ -223,11 +228,6 @@ func readQuote(r *reader) (MalType, error) {
 }
 
 func readQuasiquote(r *reader) (MalType, error) {
-	_, err := r.next()
-	if err != nil {
-		return MalType{}, err
-	}
-
 	form, err := readForm(r)
 	if err != nil {
 		return MalType{}, err
@@ -242,11 +242,6 @@ func readQuasiquote(r *reader) (MalType, error) {
 }
 
 func readUnquote(r *reader) (MalType, error) {
-	_, err := r.next()
-	if err != nil {
-		return MalType{}, err
-	}
-
 	form, err := readForm(r)
 	if err != nil {
 		return MalType{}, err
@@ -261,11 +256,6 @@ func readUnquote(r *reader) (MalType, error) {
 }
 
 func readDeref(r *reader) (MalType, error) {
-	_, err := r.next()
-	if err != nil {
-		return MalType{}, err
-	}
-
 	form, err := readForm(r)
 	if err != nil {
 		return MalType{}, err
