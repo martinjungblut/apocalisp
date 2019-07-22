@@ -76,41 +76,34 @@ func (r *reader) next() (*string, error) {
 	}
 }
 
-type MalType struct {
-	_integer *int64
-	_symbol  *string
-	_list    *[]MalType
-	_vector  *[]MalType
-	_hashmap *[]MalType
-}
-
 func readForm(r *reader) (*MalType, error) {
 	token, err := r.next()
 	if err != nil {
 		return nil, err
-	}
-
-	if token != nil && *token == "(" {
-		return readList(r)
-	} else if token != nil && *token == "[" {
-		return readVector(r)
-	} else if token != nil && *token == "{" {
-		return readHashmap(r)
-	} else if token != nil && *token == "'" {
-		return readPrefixExpansion(r, "quote")
-	} else if token != nil && *token == "~" {
-		return readPrefixExpansion(r, "unquote")
-	} else if token != nil && *token == "`" {
-		return readPrefixExpansion(r, "quasiquote")
-	} else if token != nil && *token == "@" {
-		return readPrefixExpansion(r, "deref")
-	} else if token != nil && *token == "~@" {
-		return readPrefixExpansion(r, "splice-unquote")
-	} else if token != nil && *token != ")" && *token != "]" && *token != "}" {
-		return readAtom(token)
-	} else {
+	} else if token == nil {
 		return nil, nil
 	}
+
+	if *token == "(" {
+		return readList(r)
+	} else if *token == "[" {
+		return readVector(r)
+	} else if *token == "{" {
+		return readHashmap(r)
+	} else if *token == "'" {
+		return readPrefixExpansion(r, "quote")
+	} else if *token == "~" {
+		return readPrefixExpansion(r, "unquote")
+	} else if *token == "`" {
+		return readPrefixExpansion(r, "quasiquote")
+	} else if *token == "@" {
+		return readPrefixExpansion(r, "deref")
+	} else if *token == "~@" {
+		return readPrefixExpansion(r, "splice-unquote")
+	} else if *token != ")" && *token != "]" && *token != "}" {
+		return readAtom(token)
+	}
+	return nil, nil
 }
 
 func readSequence(r *reader) (*[]MalType, error) {
@@ -198,6 +191,14 @@ func tokenize(sexpr string) []string {
 	}
 
 	return tokens
+}
+
+type MalType struct {
+	_integer *int64
+	_symbol  *string
+	_list    *[]MalType
+	_vector  *[]MalType
+	_hashmap *[]MalType
 }
 
 func ReadStr(sexpr string) (*MalType, error) {
