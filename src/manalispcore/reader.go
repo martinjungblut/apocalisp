@@ -16,54 +16,45 @@ type reader struct {
 	bracketsCount int
 	bracesCount   int
 
-	foundString bool
-
 	readAheadPosition int
 }
 
 func (r *reader) readAhead() error {
-	if r.readAheadPosition < len(r.tokens) {
-		token := r.tokens[r.readAheadPosition]
+	reachedEnd := func() bool { return r.readAheadPosition >= len(r.tokens) }
+	currentToken := func() string { return r.tokens[r.readAheadPosition] }
+	unclosedString := func(token string) bool {
+		return strings.HasPrefix(token, "\"") && !strings.HasSuffix(token, "\"")
+	}
 
-		if token == "(" {
+	if !reachedEnd() {
+		switch token := currentToken(); token {
+		case "(":
 			r.parensCount++
-		} else if token == ")" {
+		case ")":
 			r.parensCount--
-		} else if token == "[" {
+		case "[":
 			r.bracketsCount++
-		} else if token == "]" {
+		case "]":
 			r.bracketsCount--
-		} else if token == "{" {
+		case "{":
 			r.bracesCount++
-		} else if token == "}" {
+		case "}":
 			r.bracesCount--
-		} else if token == "\"" {
-			r.foundString = !r.foundString
-		} else if strings.HasPrefix(token, "\"") && !strings.HasSuffix(token, "\"") {
-			return errors.New("unexpected EOF")
+		default:
+			if unclosedString(token) {
+				return errors.New("unexpected EOF")
+			}
 		}
-	} else if r.foundString {
-		return errors.New("unexpected EOF")
 	}
 
 	if r.parensCount < 0 {
 		return errors.New("unexpected ')'")
-	}
-	if (r.readAheadPosition == len(r.tokens)) && r.parensCount > 0 {
-		return errors.New("unexpected EOF")
-	}
-
-	if r.bracketsCount < 0 {
+	} else if r.bracketsCount < 0 {
 		return errors.New("unexpected ']'")
-	}
-	if (r.readAheadPosition == len(r.tokens)) && r.bracketsCount > 0 {
-		return errors.New("unexpected EOF")
-	}
-
-	if r.bracesCount < 0 {
+	} else if r.bracesCount < 0 {
 		return errors.New("unexpected '}'")
 	}
-	if (r.readAheadPosition == len(r.tokens)) && r.bracesCount > 0 {
+	if reachedEnd() && (r.parensCount > 0 || r.bracketsCount > 0 || r.bracesCount > 0) {
 		return errors.New("unexpected EOF")
 	}
 
@@ -72,8 +63,7 @@ func (r *reader) readAhead() error {
 }
 
 func (r *reader) next() (*string, error) {
-	err := r.readAhead()
-	if err != nil {
+	if err := r.readAhead(); err != nil {
 		return nil, err
 	}
 
@@ -124,19 +114,14 @@ func readForm(r *reader) (*MalType, error) {
 }
 
 func readSequence(r *reader) (*[]MalType, error) {
-	sequence := make([]MalType, 0)
-
-	for {
-		form, err := readForm(r)
+	sequence := []MalType{}
+	for form, err := readForm(r); form != nil || err != nil; form, err = readForm(r) {
 		if err != nil {
 			return nil, err
 		} else if form != nil {
 			sequence = append(sequence, *form)
-		} else {
-			break
 		}
 	}
-
 	return &sequence, nil
 }
 
@@ -145,13 +130,11 @@ func readAtom(token *string) (*MalType, error) {
 	if err == nil {
 		return &MalType{_integer: &i}, nil
 	}
-
 	return &MalType{_symbol: token}, nil
 }
 
 func readList(r *reader) (*MalType, error) {
 	sequence, err := readSequence(r)
-
 	if err != nil {
 		return nil, err
 	} else {
@@ -161,7 +144,6 @@ func readList(r *reader) (*MalType, error) {
 
 func readVector(r *reader) (*MalType, error) {
 	sequence, err := readSequence(r)
-
 	if err != nil {
 		return nil, err
 	} else {
@@ -171,7 +153,6 @@ func readVector(r *reader) (*MalType, error) {
 
 func readHashmap(r *reader) (*MalType, error) {
 	sequence, err := readSequence(r)
-
 	if err != nil {
 		return nil, err
 	} else {
@@ -184,19 +165,15 @@ func readPrefixExpansion(r *reader, symbol string) (*MalType, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	sequence := make([]MalType, 0)
-	sequence = append(sequence, MalType{_symbol: &symbol})
-	sequence = append(sequence, *form)
-
+	sequence := []MalType{MalType{_symbol: &symbol}, *form}
 	return &MalType{_list: &sequence}, nil
 }
 
 func tokenize(sexpr string) []string {
-	rawTokens := make([]string, 0)
 	re := regexp.MustCompile(`[\s,]*(~@|[\[\]{}()'` + "`" +
 		`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"` + "`" +
 		`,;)]*)`)
+	rawTokens := []string{}
 	for _, group := range re.FindAllStringSubmatch(sexpr, -1) {
 		if (group[1] == "") || (group[1][0] == ';') {
 			continue
@@ -204,7 +181,7 @@ func tokenize(sexpr string) []string {
 		rawTokens = append(rawTokens, group[1])
 	}
 
-	tokens := make([]string, 0)
+	tokens := []string{}
 	for index, rawToken := range rawTokens {
 		lToken := rawToken
 		rToken := rawToken
@@ -224,25 +201,17 @@ func tokenize(sexpr string) []string {
 }
 
 func ReadStr(sexpr string) (*MalType, error) {
-	return readForm(&reader{
-		position:          0,
-		readAheadPosition: 0,
-		tokens:            tokenize(sexpr),
-		foundString:       false,
-	})
+	return readForm(&reader{tokens: tokenize(sexpr)})
 }
 
 func PrintStr(t *MalType) string {
 	seqToStr := func(seq *[]MalType, lChar string, rChar string) string {
-		tokens := make([]string, 0)
-
+		tokens := []string{}
 		for _, maltype := range *seq {
-			token := PrintStr(&maltype)
-			if len(token) > 0 {
+			if token := PrintStr(&maltype); len(token) > 0 {
 				tokens = append(tokens, token)
 			}
 		}
-
 		return fmt.Sprintf("%s%s%s", lChar, strings.Join(tokens, " "), rChar)
 	}
 
