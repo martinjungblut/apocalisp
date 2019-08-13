@@ -84,6 +84,17 @@ func readForm(r *reader) (*MalType, error) {
 		return nil, nil
 	}
 
+	if *token == "^" {
+		if list, err := readList(r); err == nil {
+			symbol := "with-meta"
+			subelements := *list.List
+			seq := []MalType{MalType{Symbol: &symbol}, subelements[1], subelements[0]}
+			return &MalType{List: &seq}, nil
+		} else {
+			fmt.Printf("%s\n", err.Error())
+		}
+	}
+
 	if *token == "(" {
 		return readList(r)
 	} else if *token == "[" {
@@ -121,9 +132,9 @@ func readSequence(r *reader) (*[]MalType, error) {
 func readAtom(token *string) (*MalType, error) {
 	i, err := strconv.ParseInt(*token, 10, 64)
 	if err == nil {
-		return &MalType{_integer: &i}, nil
+		return &MalType{Integer: &i}, nil
 	}
-	return &MalType{_symbol: token}, nil
+	return &MalType{Symbol: token}, nil
 }
 
 func readList(r *reader) (*MalType, error) {
@@ -131,7 +142,7 @@ func readList(r *reader) (*MalType, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		return &MalType{_list: sequence}, nil
+		return &MalType{List: sequence}, nil
 	}
 }
 
@@ -140,7 +151,7 @@ func readVector(r *reader) (*MalType, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		return &MalType{_vector: sequence}, nil
+		return &MalType{Vector: sequence}, nil
 	}
 }
 
@@ -149,17 +160,19 @@ func readHashmap(r *reader) (*MalType, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		return &MalType{_hashmap: sequence}, nil
+		return &MalType{Hashmap: sequence}, nil
 	}
 }
 
 func readPrefixExpansion(r *reader, symbol string) (*MalType, error) {
-	form, err := readForm(r)
-	if err != nil {
+	if form, err := readForm(r); err != nil {
 		return nil, err
+	} else if form != nil {
+		sequence := []MalType{MalType{Symbol: &symbol}, *form}
+		return &MalType{List: &sequence}, nil
+	} else {
+		return nil, nil
 	}
-	sequence := []MalType{MalType{_symbol: &symbol}, *form}
-	return &MalType{_list: &sequence}, nil
 }
 
 func tokenize(sexpr string) []string {
@@ -193,14 +206,6 @@ func tokenize(sexpr string) []string {
 	return tokens
 }
 
-type MalType struct {
-	_integer *int64
-	_symbol  *string
-	_list    *[]MalType
-	_vector  *[]MalType
-	_hashmap *[]MalType
-}
-
 func ReadStr(sexpr string) (*MalType, error) {
 	return readForm(&reader{tokens: tokenize(sexpr)})
 }
@@ -217,16 +222,16 @@ func PrintStr(t *MalType) string {
 	}
 
 	if t != nil {
-		if t._integer != nil {
-			return fmt.Sprintf("%d", *t._integer)
-		} else if t._symbol != nil {
-			return *t._symbol
-		} else if t._list != nil {
-			return seqToStr(t._list, "(", ")")
-		} else if t._vector != nil {
-			return seqToStr(t._vector, "[", "]")
-		} else if t._hashmap != nil {
-			return seqToStr(t._hashmap, "{", "}")
+		if t.Integer != nil {
+			return fmt.Sprintf("%d", *t.Integer)
+		} else if t.Symbol != nil {
+			return *t.Symbol
+		} else if t.List != nil {
+			return seqToStr(t.List, "(", ")")
+		} else if t.Vector != nil {
+			return seqToStr(t.Vector, "[", "]")
+		} else if t.Hashmap != nil {
+			return seqToStr(t.Hashmap, "{", "}")
 		} else {
 			return ""
 		}
