@@ -6,7 +6,19 @@ type MalType struct {
 	List           *[]MalType
 	Vector         *[]MalType
 	Hashmap        *[]MalType
-	NativeFunction *(func(...*MalType) *MalType)
+	NativeFunction *(func(...MalType) *MalType)
+}
+
+func (m *MalType) IsInteger() bool {
+	return m.Integer != nil
+}
+
+func (m *MalType) IsSymbol() bool {
+	return m.Symbol != nil
+}
+
+func (m *MalType) AsSymbol() string {
+	return *m.Symbol
 }
 
 func NewList() *MalType {
@@ -24,18 +36,18 @@ func (m *MalType) AddToList(t MalType) {
 	*m.List = append(*m.List, t)
 }
 
-func (m *MalType) IsInteger() bool {
-	return m.Integer != nil
-}
-
-func (m *MalType) IsSymbol() bool {
-	return m.Symbol != nil
-}
-
-func (m *MalType) AsSymbol() string {
-	return *m.Symbol
+func (m *MalType) AsList() []MalType {
+	return *m.List
 }
 
 func (m *MalType) IsList() bool {
 	return m.List != nil
+}
+
+func (m *MalType) IsEmptyList() bool {
+	if m.IsList() && (len(*m.List) == 0) {
+		return true
+	} else {
+		return false
+	}
 }

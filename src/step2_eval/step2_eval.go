@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/peterh/liner"
 	"manalispcore"
@@ -17,10 +18,32 @@ func PRINT(malType *manalispcore.MalType) string {
 }
 
 func EVAL(malType *manalispcore.MalType, environment *manalispcore.Environment) (*manalispcore.MalType, error) {
-	return malType, nil
+	if !malType.IsList() {
+		if t, err := evalAst(malType, environment); err == nil {
+			return t, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	if malType.IsEmptyList() {
+		return malType, nil
+	} else {
+		if container, err := evalAst(malType, environment); err == nil {
+			objects := container.AsList()
+			function := objects[1]
+			parameters := objects[2:]
+			result := (*function.NativeFunction)(parameters...)
+			return result, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	return nil, errors.New("Unexpected behavior.")
 }
 
-func eval_ast(ast *manalispcore.MalType, environment *manalispcore.Environment) (*manalispcore.MalType, error) {
+func evalAst(ast *manalispcore.MalType, environment *manalispcore.Environment) (*manalispcore.MalType, error) {
 	if ast.IsSymbol() {
 		if f, err := environment.Find(ast.AsSymbol()); err == nil {
 			return f, nil
@@ -55,34 +78,36 @@ func eval_ast(ast *manalispcore.MalType, environment *manalispcore.Environment) 
 func rep(sexpr string) (string, error) {
 	environment := manalispcore.NewEnvironment()
 
-	environment.DefineFunction("+", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
-		r := int64(0)
-		for _, input := range inputs {
-			r += *(*input).Integer
+	environment.DefineFunction("+", func(inputs ...manalispcore.MalType) *manalispcore.MalType {
+		r := *inputs[0].Integer
+		for _, input := range inputs[1:] {
+			if input.IsInteger() {
+				r += *input.Integer
+			}
 		}
 		return &manalispcore.MalType{Integer: &r}
 	})
 
-	environment.DefineFunction("-", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
-		r := int64(0)
-		for _, input := range inputs {
-			r -= *(*input).Integer
+	environment.DefineFunction("-", func(inputs ...manalispcore.MalType) *manalispcore.MalType {
+		r := *inputs[0].Integer
+		for _, input := range inputs[1:] {
+			r -= *input.Integer
 		}
 		return &manalispcore.MalType{Integer: &r}
 	})
 
-	environment.DefineFunction("/", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
-		r := int64(0)
-		for _, input := range inputs {
-			r /= *(*input).Integer
+	environment.DefineFunction("/", func(inputs ...manalispcore.MalType) *manalispcore.MalType {
+		r := *inputs[0].Integer
+		for _, input := range inputs[1:] {
+			r /= *input.Integer
 		}
 		return &manalispcore.MalType{Integer: &r}
 	})
 
-	environment.DefineFunction("*", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
-		r := int64(0)
-		for _, input := range inputs {
-			r *= *(*input).Integer
+	environment.DefineFunction("*", func(inputs ...manalispcore.MalType) *manalispcore.MalType {
+		r := *inputs[0].Integer
+		for _, input := range inputs[1:] {
+			r *= *input.Integer
 		}
 		return &manalispcore.MalType{Integer: &r}
 	})
