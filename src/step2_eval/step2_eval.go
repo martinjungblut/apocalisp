@@ -16,14 +16,46 @@ func PRINT(malType *manalispcore.MalType) string {
 	return manalispcore.PrintStr(malType)
 }
 
-func EVAL(malType *manalispcore.MalType, environment *manalispcore.Environment) *manalispcore.MalType {
-	return malType
+func EVAL(malType *manalispcore.MalType, environment *manalispcore.Environment) (*manalispcore.MalType, error) {
+	return malType, nil
+}
+
+func eval_ast(ast *manalispcore.MalType, environment *manalispcore.Environment) (*manalispcore.MalType, error) {
+	if ast.IsSymbol() {
+		if f, err := environment.Find(ast.AsSymbol()); err == nil {
+			return f, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	if ast.IsList() {
+		l := manalispcore.NewList()
+
+		var e *error
+		e = nil
+		ast.EachInList(func(k manalispcore.MalType) {
+			if t, err := EVAL(&k, environment); err == nil {
+				l.AddToList(*t)
+			} else {
+				e = &err
+			}
+		})
+
+		if e == nil {
+			return l, nil
+		} else {
+			return nil, *e
+		}
+	}
+
+	return ast, nil
 }
 
 func rep(sexpr string) (string, error) {
 	environment := manalispcore.NewEnvironment()
 
-	environment.Define("+", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
+	environment.DefineFunction("+", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
 		r := int64(0)
 		for _, input := range inputs {
 			r += *(*input).Integer
@@ -31,7 +63,7 @@ func rep(sexpr string) (string, error) {
 		return &manalispcore.MalType{Integer: &r}
 	})
 
-	environment.Define("-", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
+	environment.DefineFunction("-", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
 		r := int64(0)
 		for _, input := range inputs {
 			r -= *(*input).Integer
@@ -39,7 +71,7 @@ func rep(sexpr string) (string, error) {
 		return &manalispcore.MalType{Integer: &r}
 	})
 
-	environment.Define("/", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
+	environment.DefineFunction("/", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
 		r := int64(0)
 		for _, input := range inputs {
 			r /= *(*input).Integer
@@ -47,7 +79,7 @@ func rep(sexpr string) (string, error) {
 		return &manalispcore.MalType{Integer: &r}
 	})
 
-	environment.Define("*", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
+	environment.DefineFunction("*", func(inputs ...*manalispcore.MalType) *manalispcore.MalType {
 		r := int64(0)
 		for _, input := range inputs {
 			r *= *(*input).Integer
@@ -60,7 +92,11 @@ func rep(sexpr string) (string, error) {
 		return "", err
 	}
 
-	evaluated := EVAL(t, environment)
+	evaluated, err := EVAL(t, environment)
+	if err != nil {
+		return "", err
+	}
+
 	return PRINT(evaluated), nil
 }
 
