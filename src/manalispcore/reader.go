@@ -209,33 +209,3 @@ func tokenize(sexpr string) []string {
 func ReadStr(sexpr string) (*MalType, error) {
 	return readForm(&reader{tokens: tokenize(sexpr)})
 }
-
-func PrintStr(t *MalType) string {
-	seqToStr := func(seq *[]MalType, lChar string, rChar string) string {
-		tokens := []string{}
-		for _, maltype := range *seq {
-			if token := PrintStr(&maltype); len(token) > 0 {
-				tokens = append(tokens, token)
-			}
-		}
-		return fmt.Sprintf("%s%s%s", lChar, strings.Join(tokens, " "), rChar)
-	}
-
-	if t != nil {
-		if t.Integer != nil {
-			return fmt.Sprintf("%d", *t.Integer)
-		} else if t.Symbol != nil {
-			return *t.Symbol
-		} else if t.List != nil {
-			return seqToStr(t.List, "(", ")")
-		} else if t.Vector != nil {
-			return seqToStr(t.Vector, "[", "]")
-		} else if t.Hashmap != nil {
-			return seqToStr(t.Hashmap, "{", "}")
-		} else {
-			return ""
-		}
-	} else {
-		return ""
-	}
-}

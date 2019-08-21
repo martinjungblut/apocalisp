@@ -14,7 +14,7 @@ func READ(sexpr string) (*manalispcore.MalType, error) {
 }
 
 func PRINT(malType *manalispcore.MalType) string {
-	return manalispcore.PrintStr(malType)
+	return malType.ToString()
 }
 
 func EVAL(malType *manalispcore.MalType, environment *manalispcore.Environment) (*manalispcore.MalType, error) {
