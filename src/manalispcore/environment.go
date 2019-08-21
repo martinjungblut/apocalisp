@@ -14,16 +14,16 @@ func NewEnvironment() *Environment {
 	return &Environment{table: table}
 }
 
-func (e *Environment) DefineFunction(symbol string, nativeFunction func(...MalType) *MalType) {
-	e.table[symbol] = MalType{NativeFunction: &nativeFunction}
+func (env *Environment) DefineFunction(symbol string, nativeFunction func(...MalType) MalType) {
+	env.table[symbol] = MalType{NativeFunction: &nativeFunction}
 }
 
-func (e *Environment) Find(symbol string) (*MalType, error) {
-	for k, f := range e.table {
-		if k == symbol {
-			return &f, nil
+func (env *Environment) Find(symbol string) (MalType, error) {
+	for key, value := range env.table {
+		if key == symbol {
+			return value, nil
 		}
 	}
 
-	return nil, errors.New(fmt.Sprintf("Symbol not found: %s", symbol))
+	return MalType{}, errors.New(fmt.Sprintf("Symbol not found: %s", symbol))
 }

@@ -6,7 +6,7 @@ type MalType struct {
 	List           *[]MalType
 	Vector         *[]MalType
 	Hashmap        *[]MalType
-	NativeFunction *(func(...MalType) *MalType)
+	NativeFunction *(func(...MalType) MalType)
 }
 
 func (m *MalType) IsInteger() bool {
@@ -24,12 +24,6 @@ func (m *MalType) AsSymbol() string {
 func NewList() *MalType {
 	l := make([]MalType, 1)
 	return &MalType{List: &l}
-}
-
-func (m *MalType) EachInList(callback func(MalType)) {
-	for _, t := range *m.List {
-		callback(t)
-	}
 }
 
 func (m *MalType) AddToList(t MalType) {
