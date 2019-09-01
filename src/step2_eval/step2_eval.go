@@ -9,15 +9,15 @@ import (
 	"path/filepath"
 )
 
-func READ(sexpr string) (*manalisp.MalType, error) {
+func READ(sexpr string) (*manalisp.ManalispType, error) {
 	return manalisp.ReadStr(sexpr)
 }
 
-func PRINT(malType *manalisp.MalType) string {
+func PRINT(malType *manalisp.ManalispType) string {
 	return malType.ToString()
 }
 
-func EVAL(malType *manalisp.MalType, environment *manalisp.Environment) (*manalisp.MalType, error) {
+func EVAL(malType *manalisp.ManalispType, environment *manalisp.Environment) (*manalisp.ManalispType, error) {
 	if !malType.IsList() {
 		if t, err := evalAst(malType, environment); err == nil {
 			return t, nil
@@ -41,7 +41,7 @@ func EVAL(malType *manalisp.MalType, environment *manalisp.Environment) (*manali
 	return nil, errors.New("Unexpected behavior.")
 }
 
-func evalAst(node *manalisp.MalType, environment *manalisp.Environment) (*manalisp.MalType, error) {
+func evalAst(node *manalisp.ManalispType, environment *manalisp.Environment) (*manalisp.ManalispType, error) {
 	if node.IsSymbol() {
 		if f, err := environment.Find(node.AsSymbol()); err == nil {
 			return &f, nil
@@ -68,38 +68,38 @@ func evalAst(node *manalisp.MalType, environment *manalisp.Environment) (*manali
 func rep(sexpr string) (string, error) {
 	environment := manalisp.NewEnvironment()
 
-	environment.DefineFunction("+", func(inputs ...manalisp.MalType) manalisp.MalType {
+	environment.DefineFunction("+", func(inputs ...manalisp.ManalispType) manalisp.ManalispType {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			if input.IsInteger() {
 				r += *input.Integer
 			}
 		}
-		return manalisp.MalType{Integer: &r}
+		return manalisp.ManalispType{Integer: &r}
 	})
 
-	environment.DefineFunction("-", func(inputs ...manalisp.MalType) manalisp.MalType {
+	environment.DefineFunction("-", func(inputs ...manalisp.ManalispType) manalisp.ManalispType {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r -= *input.Integer
 		}
-		return manalisp.MalType{Integer: &r}
+		return manalisp.ManalispType{Integer: &r}
 	})
 
-	environment.DefineFunction("/", func(inputs ...manalisp.MalType) manalisp.MalType {
+	environment.DefineFunction("/", func(inputs ...manalisp.ManalispType) manalisp.ManalispType {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r /= *input.Integer
 		}
-		return manalisp.MalType{Integer: &r}
+		return manalisp.ManalispType{Integer: &r}
 	})
 
-	environment.DefineFunction("*", func(inputs ...manalisp.MalType) manalisp.MalType {
+	environment.DefineFunction("*", func(inputs ...manalisp.ManalispType) manalisp.ManalispType {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r *= *input.Integer
 		}
-		return manalisp.MalType{Integer: &r}
+		return manalisp.ManalispType{Integer: &r}
 	})
 
 	t, err := READ(sexpr)

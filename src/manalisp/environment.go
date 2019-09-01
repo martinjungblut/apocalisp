@@ -6,24 +6,24 @@ import (
 )
 
 type Environment struct {
-	table map[string]MalType
+	table map[string]ManalispType
 }
 
 func NewEnvironment() *Environment {
-	table := make(map[string]MalType)
+	table := make(map[string]ManalispType)
 	return &Environment{table: table}
 }
 
-func (env *Environment) DefineFunction(symbol string, nativeFunction func(...MalType) MalType) {
-	env.table[symbol] = MalType{NativeFunction: &nativeFunction}
+func (env *Environment) DefineFunction(symbol string, nativeFunction func(...ManalispType) ManalispType) {
+	env.table[symbol] = ManalispType{NativeFunction: &nativeFunction}
 }
 
-func (env *Environment) Find(symbol string) (MalType, error) {
+func (env *Environment) Find(symbol string) (ManalispType, error) {
 	for key, value := range env.table {
 		if key == symbol {
 			return value, nil
 		}
 	}
 
-	return MalType{}, errors.New(fmt.Sprintf("Symbol not found: %s", symbol))
+	return ManalispType{}, errors.New(fmt.Sprintf("Symbol not found: %s", symbol))
 }

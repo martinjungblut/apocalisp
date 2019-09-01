@@ -5,62 +5,62 @@ import (
 	"strings"
 )
 
-type MalType struct {
+type ManalispType struct {
 	Integer        *int64
 	Symbol         *string
-	List           *[]MalType
-	Vector         *[]MalType
-	Hashmap        *[]MalType
-	NativeFunction *(func(...MalType) MalType)
+	List           *[]ManalispType
+	Vector         *[]ManalispType
+	Hashmap        *[]ManalispType
+	NativeFunction *(func(...ManalispType) ManalispType)
 }
 
-func (m *MalType) IsInteger() bool {
+func (m *ManalispType) IsInteger() bool {
 	return m.Integer != nil
 }
 
-func (m *MalType) AsInteger() int64 {
+func (m *ManalispType) AsInteger() int64 {
 	return *m.Integer
 }
 
-func (m *MalType) IsSymbol() bool {
+func (m *ManalispType) IsSymbol() bool {
 	return m.Symbol != nil
 }
 
-func (m *MalType) AsSymbol() string {
+func (m *ManalispType) AsSymbol() string {
 	return *m.Symbol
 }
 
-func NewList() *MalType {
-	l := make([]MalType, 1)
-	return &MalType{List: &l}
+func NewList() *ManalispType {
+	l := make([]ManalispType, 1)
+	return &ManalispType{List: &l}
 }
 
-func (m *MalType) AddToList(t MalType) {
+func (m *ManalispType) AddToList(t ManalispType) {
 	*m.List = append(*m.List, t)
 }
 
-func (m *MalType) AsList() []MalType {
+func (m *ManalispType) AsList() []ManalispType {
 	return *m.List
 }
 
-func (m *MalType) IsList() bool {
+func (m *ManalispType) IsList() bool {
 	return m.List != nil
 }
 
-func (m *MalType) IsEmptyList() bool {
+func (m *ManalispType) IsEmptyList() bool {
 	return m.IsList() && (len(*m.List) == 0)
 }
 
-func (m *MalType) IsVector() bool {
+func (m *ManalispType) IsVector() bool {
 	return m.Vector != nil
 }
 
-func (m *MalType) IsHashmap() bool {
+func (m *ManalispType) IsHashmap() bool {
 	return m.Hashmap != nil
 }
 
-func (m *MalType) ToString() string {
-	wrapSequence := func(sequence *[]MalType, lWrap string, rWrap string) string {
+func (m *ManalispType) ToString() string {
+	wrapSequence := func(sequence *[]ManalispType, lWrap string, rWrap string) string {
 		tokens := []string{}
 		for _, element := range *sequence {
 			if token := element.ToString(); len(token) > 0 {

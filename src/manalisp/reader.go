@@ -76,7 +76,7 @@ func (r *reader) next() (*string, error) {
 	}
 }
 
-func readForm(r *reader) (*MalType, error) {
+func readForm(r *reader) (*ManalispType, error) {
 	token, err := r.next()
 	if err != nil {
 		return nil, err
@@ -88,8 +88,8 @@ func readForm(r *reader) (*MalType, error) {
 		if list, err := readList(r); err == nil {
 			symbol := "with-meta"
 			subelements := *list.List
-			seq := []MalType{MalType{Symbol: &symbol}, subelements[1], subelements[0]}
-			return &MalType{List: &seq}, nil
+			seq := []ManalispType{ManalispType{Symbol: &symbol}, subelements[1], subelements[0]}
+			return &ManalispType{List: &seq}, nil
 		} else {
 			fmt.Printf("%s\n", err.Error())
 		}
@@ -117,8 +117,8 @@ func readForm(r *reader) (*MalType, error) {
 	return nil, nil
 }
 
-func readSequence(r *reader) (*[]MalType, error) {
-	sequence := []MalType{}
+func readSequence(r *reader) (*[]ManalispType, error) {
+	sequence := []ManalispType{}
 	for form, err := readForm(r); form != nil || err != nil; form, err = readForm(r) {
 		if err != nil {
 			return nil, err
@@ -129,47 +129,47 @@ func readSequence(r *reader) (*[]MalType, error) {
 	return &sequence, nil
 }
 
-func readAtom(token *string) (*MalType, error) {
+func readAtom(token *string) (*ManalispType, error) {
 	i, err := strconv.ParseInt(*token, 10, 64)
 	if err == nil {
-		return &MalType{Integer: &i}, nil
+		return &ManalispType{Integer: &i}, nil
 	}
-	return &MalType{Symbol: token}, nil
+	return &ManalispType{Symbol: token}, nil
 }
 
-func readList(r *reader) (*MalType, error) {
+func readList(r *reader) (*ManalispType, error) {
 	sequence, err := readSequence(r)
 	if err != nil {
 		return nil, err
 	} else {
-		return &MalType{List: sequence}, nil
+		return &ManalispType{List: sequence}, nil
 	}
 }
 
-func readVector(r *reader) (*MalType, error) {
+func readVector(r *reader) (*ManalispType, error) {
 	sequence, err := readSequence(r)
 	if err != nil {
 		return nil, err
 	} else {
-		return &MalType{Vector: sequence}, nil
+		return &ManalispType{Vector: sequence}, nil
 	}
 }
 
-func readHashmap(r *reader) (*MalType, error) {
+func readHashmap(r *reader) (*ManalispType, error) {
 	sequence, err := readSequence(r)
 	if err != nil {
 		return nil, err
 	} else {
-		return &MalType{Hashmap: sequence}, nil
+		return &ManalispType{Hashmap: sequence}, nil
 	}
 }
 
-func readPrefixExpansion(r *reader, symbol string) (*MalType, error) {
+func readPrefixExpansion(r *reader, symbol string) (*ManalispType, error) {
 	if form, err := readForm(r); err != nil {
 		return nil, err
 	} else if form != nil {
-		sequence := []MalType{MalType{Symbol: &symbol}, *form}
-		return &MalType{List: &sequence}, nil
+		sequence := []ManalispType{ManalispType{Symbol: &symbol}, *form}
+		return &ManalispType{List: &sequence}, nil
 	} else {
 		return nil, nil
 	}
@@ -206,6 +206,6 @@ func tokenize(sexpr string) []string {
 	return tokens
 }
 
-func ReadStr(sexpr string) (*MalType, error) {
+func ReadStr(sexpr string) (*ManalispType, error) {
 	return readForm(&reader{tokens: tokenize(sexpr)})
 }

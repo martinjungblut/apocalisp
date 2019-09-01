@@ -8,15 +8,15 @@ import (
 	"path/filepath"
 )
 
-func READ(sexpr string) (*manalisp.MalType, error) {
+func READ(sexpr string) (*manalisp.ManalispType, error) {
 	return manalisp.ReadStr(sexpr)
 }
 
-func PRINT(malType *manalisp.MalType) string {
+func PRINT(malType *manalisp.ManalispType) string {
 	return malType.ToString()
 }
 
-func EVAL(malType *manalisp.MalType) *manalisp.MalType {
+func EVAL(malType *manalisp.ManalispType) *manalisp.ManalispType {
 	return malType
 }
 
