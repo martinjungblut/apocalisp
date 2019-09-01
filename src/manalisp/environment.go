@@ -1,4 +1,4 @@
-package manalispcore
+package manalisp
 
 import (
 	"errors"

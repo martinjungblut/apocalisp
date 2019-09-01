@@ -1,4 +1,4 @@
-package manalispcore
+package manalisp
 
 import (
 	"fmt"
@@ -48,11 +48,7 @@ func (m *MalType) IsList() bool {
 }
 
 func (m *MalType) IsEmptyList() bool {
-	if m.IsList() && (len(*m.List) == 0) {
-		return true
-	} else {
-		return false
-	}
+	return m.IsList() && (len(*m.List) == 0)
 }
 
 func (m *MalType) IsVector() bool {

@@ -3,20 +3,20 @@ package main
 import (
 	"fmt"
 	"github.com/peterh/liner"
-	"manalispcore"
+	"manalisp"
 	"os"
 	"path/filepath"
 )
 
-func READ(sexpr string) (*manalispcore.MalType, error) {
-	return manalispcore.ReadStr(sexpr)
+func READ(sexpr string) (*manalisp.MalType, error) {
+	return manalisp.ReadStr(sexpr)
 }
 
-func PRINT(malType *manalispcore.MalType) string {
+func PRINT(malType *manalisp.MalType) string {
 	return malType.ToString()
 }
 
-func EVAL(malType *manalispcore.MalType) *manalispcore.MalType {
+func EVAL(malType *manalisp.MalType) *manalisp.MalType {
 	return malType
 }
 
