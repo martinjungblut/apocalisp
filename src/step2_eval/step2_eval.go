@@ -31,8 +31,13 @@ func EVAL(malType *manalisp.ManalispType, environment *manalisp.Environment) (*m
 			objects := container.AsList()
 			function := objects[1]
 			parameters := objects[2:]
-			result := (*function.NativeFunction)(parameters...)
-			return &result, nil
+
+			if function.IsNativeFunction() {
+				result := function.CallNativeFunction(parameters...)
+				return &result, nil
+			} else {
+				return nil, errors.New(fmt.Sprintf("Symbol is not a function: %s", function.ToString()))
+			}
 		} else {
 			return nil, err
 		}
@@ -43,11 +48,8 @@ func EVAL(malType *manalisp.ManalispType, environment *manalisp.Environment) (*m
 
 func evalAst(node *manalisp.ManalispType, environment *manalisp.Environment) (*manalisp.ManalispType, error) {
 	if node.IsSymbol() {
-		if f, err := environment.Find(node.AsSymbol()); err == nil {
-			return &f, nil
-		} else {
-			return nil, err
-		}
+		f := environment.Find(node.AsSymbol())
+		return &f, nil
 	}
 
 	if node.IsList() {
@@ -55,6 +57,30 @@ func evalAst(node *manalisp.ManalispType, environment *manalisp.Environment) (*m
 		for _, element := range node.AsList() {
 			if evaluated, err := EVAL(&element, environment); err == nil {
 				all.AddToList(*evaluated)
+			} else {
+				return nil, err
+			}
+		}
+		return all, nil
+	}
+
+	if node.IsVector() {
+		all := manalisp.NewVector()
+		for _, element := range node.AsVector() {
+			if evaluated, err := EVAL(&element, environment); err == nil {
+				all.AddToVector(*evaluated)
+			} else {
+				return nil, err
+			}
+		}
+		return all, nil
+	}
+
+	if node.IsHashmap() {
+		all := manalisp.NewHashmap()
+		for _, element := range node.AsHashmap() {
+			if evaluated, err := EVAL(&element, environment); err == nil {
+				all.AddToHashmap(*evaluated)
 			} else {
 				return nil, err
 			}

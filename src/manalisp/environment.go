@@ -1,10 +1,5 @@
 package manalisp
 
-import (
-	"errors"
-	"fmt"
-)
-
 type Environment struct {
 	table map[string]ManalispType
 }
@@ -15,15 +10,18 @@ func NewEnvironment() *Environment {
 }
 
 func (env *Environment) DefineFunction(symbol string, nativeFunction func(...ManalispType) ManalispType) {
-	env.table[symbol] = ManalispType{NativeFunction: &nativeFunction}
+	env.table[symbol] = ManalispType{
+		NativeFunction: &nativeFunction,
+		Symbol:         &symbol,
+	}
 }
 
-func (env *Environment) Find(symbol string) (ManalispType, error) {
+func (env *Environment) Find(symbol string) ManalispType {
 	for key, value := range env.table {
 		if key == symbol {
-			return value, nil
+			return value
 		}
 	}
 
-	return ManalispType{}, errors.New(fmt.Sprintf("Symbol not found: %s", symbol))
+	return ManalispType{Symbol: &symbol}
 }
