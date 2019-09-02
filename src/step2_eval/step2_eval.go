@@ -10,7 +10,7 @@ import (
 )
 
 func READ(sexpr string) (*manalisp.ManalispType, error) {
-	return manalisp.ReadStr(sexpr)
+	return manalisp.Parse(sexpr)
 }
 
 func PRINT(malType *manalisp.ManalispType) string {
