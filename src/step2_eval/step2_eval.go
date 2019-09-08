@@ -33,13 +33,15 @@ func main() {
 		}
 	}()
 
+	environment := manalisp.DefaultEnvironment()
+
 	// repl
 	fmt.Print("This is manaLISP.\n")
 	for {
 		if sexpr, err := line.Prompt("user> "); err == nil {
 			line.AppendHistory(sexpr)
 
-			output, err := manalisp.Rep(sexpr, manalisp.Step2Eval)
+			output, err := manalisp.Rep(sexpr, environment, manalisp.Step2Eval)
 			if err == nil {
 				if len(output) > 0 {
 					fmt.Printf("%s\n", output)

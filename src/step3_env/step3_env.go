@@ -41,7 +41,7 @@ func main() {
 		if sexpr, err := line.Prompt("user> "); err == nil {
 			line.AppendHistory(sexpr)
 
-			output, err := manalisp.Rep(sexpr, environment, manalisp.NoEval)
+			output, err := manalisp.Rep(sexpr, environment, manalisp.Step3Eval)
 			if err == nil {
 				if len(output) > 0 {
 					fmt.Printf("%s\n", output)

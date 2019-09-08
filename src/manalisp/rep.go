@@ -5,43 +5,7 @@ import (
 	"fmt"
 )
 
-func Rep(sexpr string, eval func(*ManalispType, *Environment) (*ManalispType, error)) (string, error) {
-	environment := NewEnvironment()
-
-	environment.DefineFunction("+", func(inputs ...ManalispType) ManalispType {
-		r := *inputs[0].Integer
-		for _, input := range inputs[1:] {
-			if input.IsInteger() {
-				r += *input.Integer
-			}
-		}
-		return ManalispType{Integer: &r}
-	})
-
-	environment.DefineFunction("-", func(inputs ...ManalispType) ManalispType {
-		r := *inputs[0].Integer
-		for _, input := range inputs[1:] {
-			r -= *input.Integer
-		}
-		return ManalispType{Integer: &r}
-	})
-
-	environment.DefineFunction("/", func(inputs ...ManalispType) ManalispType {
-		r := *inputs[0].Integer
-		for _, input := range inputs[1:] {
-			r /= *input.Integer
-		}
-		return ManalispType{Integer: &r}
-	})
-
-	environment.DefineFunction("*", func(inputs ...ManalispType) ManalispType {
-		r := *inputs[0].Integer
-		for _, input := range inputs[1:] {
-			r *= *input.Integer
-		}
-		return ManalispType{Integer: &r}
-	})
-
+func Rep(sexpr string, environment *Environment, eval func(*ManalispType, *Environment) (*ManalispType, error)) (string, error) {
 	t, err := read(sexpr)
 	if err != nil {
 		return "", err
@@ -90,6 +54,42 @@ func Step2Eval(node *ManalispType, environment *Environment) (*ManalispType, err
 	return nil, errors.New("Unexpected behavior.")
 }
 
+func Step3Eval(node *ManalispType, environment *Environment) (*ManalispType, error) {
+	if !node.IsList() {
+		if t, err := evalAst(node, environment, Step3Eval); err == nil {
+			return t, nil
+		} else {
+			return nil, err
+		}
+	} else if node.IsEmptyList() {
+		return node, nil
+	} else if node.IsList() {
+		if container, err := evalAst(node, environment, Step3Eval); err == nil {
+			objects := container.AsList()
+			function := objects[1]
+			parameters := objects[2:]
+
+			if function.IsNativeFunction() {
+				result := function.CallNativeFunction(parameters...)
+				return &result, nil
+			} else if function.IsSymbol() && function.AsSymbol() == "def!" {
+				if len(parameters) == 2 && parameters[0].IsSymbol() {
+					environment.Set(parameters[0].AsSymbol(), parameters[1])
+					return &parameters[1], nil
+				} else {
+					return nil, errors.New("Invalid syntax.")
+				}
+			} else {
+				return nil, errors.New(fmt.Sprintf("Symbol is not a function: %s", function.ToString()))
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	return nil, errors.New("Unexpected behavior.")
+}
+
 func read(sexpr string) (*ManalispType, error) {
 	return Parse(sexpr)
 }
@@ -100,7 +100,7 @@ func print(node *ManalispType) string {
 
 func evalAst(node *ManalispType, environment *Environment, eval func(*ManalispType, *Environment) (*ManalispType, error)) (*ManalispType, error) {
 	if node.IsSymbol() {
-		f := environment.Find(node.AsSymbol())
+		f := environment.Get(node.AsSymbol())
 		return &f, nil
 	}
 
