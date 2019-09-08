@@ -8,28 +8,6 @@ import (
 	"path/filepath"
 )
 
-func READ(sexpr string) (*manalisp.ManalispType, error) {
-	return manalisp.Parse(sexpr)
-}
-
-func PRINT(malType *manalisp.ManalispType) string {
-	return malType.ToString()
-}
-
-func EVAL(malType *manalisp.ManalispType) *manalisp.ManalispType {
-	return malType
-}
-
-func rep(sexpr string) (string, error) {
-	t, err := READ(sexpr)
-	if err != nil {
-		return "", err
-	}
-
-	evaluated := EVAL(t)
-	return PRINT(evaluated), nil
-}
-
 func main() {
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -61,9 +39,11 @@ func main() {
 		if sexpr, err := line.Prompt("user> "); err == nil {
 			line.AppendHistory(sexpr)
 
-			output, err := rep(sexpr)
+			output, err := manalisp.Rep(sexpr, manalisp.NoEval)
 			if err == nil {
-				fmt.Printf("%s\n", output)
+				if len(output) > 0 {
+					fmt.Printf("%s\n", output)
+				}
 			} else {
 				fmt.Printf("%s\n", err.Error())
 			}
