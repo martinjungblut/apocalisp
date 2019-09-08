@@ -12,8 +12,8 @@ func Parse(sexpr string) (*ManalispType, error) {
 	return readForm(reader)
 }
 
-func readForm(r *parser.Reader) (*ManalispType, error) {
-	token, err := r.Next()
+func readForm(reader *parser.Reader) (*ManalispType, error) {
+	token, err := reader.Next()
 	if err != nil {
 		return nil, err
 	} else if token == nil {
@@ -21,7 +21,7 @@ func readForm(r *parser.Reader) (*ManalispType, error) {
 	}
 
 	if *token == "^" {
-		if list, err := readList(r); err == nil {
+		if list, err := readList(reader); err == nil {
 			symbol := "with-meta"
 			subelements := *list.List
 			seq := []ManalispType{ManalispType{Symbol: &symbol}, subelements[1], subelements[0]}
@@ -32,30 +32,30 @@ func readForm(r *parser.Reader) (*ManalispType, error) {
 	}
 
 	if *token == "(" {
-		return readList(r)
+		return readList(reader)
 	} else if *token == "[" {
-		return readVector(r)
+		return readVector(reader)
 	} else if *token == "{" {
-		return readHashmap(r)
+		return readHashmap(reader)
 	} else if *token == "'" {
-		return readPrefixExpansion(r, "quote")
+		return readPrefixExpansion(reader, "quote")
 	} else if *token == "~" {
-		return readPrefixExpansion(r, "unquote")
+		return readPrefixExpansion(reader, "unquote")
 	} else if *token == "`" {
-		return readPrefixExpansion(r, "quasiquote")
+		return readPrefixExpansion(reader, "quasiquote")
 	} else if *token == "@" {
-		return readPrefixExpansion(r, "deref")
+		return readPrefixExpansion(reader, "deref")
 	} else if *token == "~@" {
-		return readPrefixExpansion(r, "splice-unquote")
+		return readPrefixExpansion(reader, "splice-unquote")
 	} else if *token != ")" && *token != "]" && *token != "}" {
 		return readAtom(token)
 	}
 	return nil, nil
 }
 
-func readSequence(r *parser.Reader) (*[]ManalispType, error) {
+func readSequence(reader *parser.Reader) (*[]ManalispType, error) {
 	sequence := []ManalispType{}
-	for form, err := readForm(r); form != nil || err != nil; form, err = readForm(r) {
+	for form, err := readForm(reader); form != nil || err != nil; form, err = readForm(reader) {
 		if err != nil {
 			return nil, err
 		} else if form != nil {
@@ -73,8 +73,8 @@ func readAtom(token *string) (*ManalispType, error) {
 	return &ManalispType{Symbol: token}, nil
 }
 
-func readList(r *parser.Reader) (*ManalispType, error) {
-	sequence, err := readSequence(r)
+func readList(reader *parser.Reader) (*ManalispType, error) {
+	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
 	} else {
@@ -82,8 +82,8 @@ func readList(r *parser.Reader) (*ManalispType, error) {
 	}
 }
 
-func readVector(r *parser.Reader) (*ManalispType, error) {
-	sequence, err := readSequence(r)
+func readVector(reader *parser.Reader) (*ManalispType, error) {
+	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
 	} else {
@@ -91,8 +91,8 @@ func readVector(r *parser.Reader) (*ManalispType, error) {
 	}
 }
 
-func readHashmap(r *parser.Reader) (*ManalispType, error) {
-	sequence, err := readSequence(r)
+func readHashmap(reader *parser.Reader) (*ManalispType, error) {
+	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
 	} else {
@@ -100,8 +100,8 @@ func readHashmap(r *parser.Reader) (*ManalispType, error) {
 	}
 }
 
-func readPrefixExpansion(r *parser.Reader, symbol string) (*ManalispType, error) {
-	if form, err := readForm(r); err != nil {
+func readPrefixExpansion(reader *parser.Reader, symbol string) (*ManalispType, error) {
+	if form, err := readForm(reader); err != nil {
 		return nil, err
 	} else if form != nil {
 		sequence := []ManalispType{ManalispType{Symbol: &symbol}, *form}
