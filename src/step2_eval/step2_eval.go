@@ -1,9 +1,9 @@
 package main
 
 import (
+	"apocalisp"
 	"fmt"
 	"github.com/peterh/liner"
-	"apocalisp"
 	"os"
 	"path/filepath"
 )
