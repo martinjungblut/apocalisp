@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/peterh/liner"
-	"manalisp"
+	"apocalisp"
 	"os"
 	"path/filepath"
 )
@@ -14,7 +14,7 @@ func main() {
 		fmt.Print("Error while calling 'os.Getwd()'.")
 		os.Exit(1)
 	}
-	historyFilePath := filepath.Join(cwd, ".manalisp_history")
+	historyFilePath := filepath.Join(cwd, ".apocalisp_history")
 
 	line := liner.NewLiner()
 	defer line.Close()
@@ -33,15 +33,15 @@ func main() {
 		}
 	}()
 
-	environment := manalisp.DefaultEnvironment()
+	environment := apocalisp.DefaultEnvironment()
 
 	// repl
-	fmt.Print("This is manaLISP.\n")
+	fmt.Print("This is apocaLISP.\n")
 	for {
 		if sexpr, err := line.Prompt("user> "); err == nil {
 			line.AppendHistory(sexpr)
 
-			output, err := manalisp.Rep(sexpr, environment, manalisp.NoEval)
+			output, err := apocalisp.Rep(sexpr, environment, apocalisp.NoEval)
 			if err == nil {
 				if len(output) > 0 {
 					fmt.Printf("%s\n", output)

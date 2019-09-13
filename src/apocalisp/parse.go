@@ -1,18 +1,18 @@
-package manalisp
+package apocalisp
 
 import (
 	"fmt"
-	"manalisp/parser"
+	"apocalisp/parser"
 	"strconv"
 )
 
-func Parse(sexpr string) (*ManalispType, error) {
+func Parse(sexpr string) (*ApocalispType, error) {
 	tokens := parser.Tokenize(sexpr)
 	reader := parser.NewReader(tokens)
 	return readForm(reader)
 }
 
-func readForm(reader *parser.Reader) (*ManalispType, error) {
+func readForm(reader *parser.Reader) (*ApocalispType, error) {
 	token, err := reader.Next()
 	if err != nil {
 		return nil, err
@@ -24,8 +24,8 @@ func readForm(reader *parser.Reader) (*ManalispType, error) {
 		if list, err := readList(reader); err == nil {
 			symbol := "with-meta"
 			subelements := *list.List
-			seq := []ManalispType{ManalispType{Symbol: &symbol}, subelements[1], subelements[0]}
-			return &ManalispType{List: &seq}, nil
+			seq := []ApocalispType{ApocalispType{Symbol: &symbol}, subelements[1], subelements[0]}
+			return &ApocalispType{List: &seq}, nil
 		} else {
 			fmt.Printf("%s\n", err.Error())
 		}
@@ -53,8 +53,8 @@ func readForm(reader *parser.Reader) (*ManalispType, error) {
 	return nil, nil
 }
 
-func readSequence(reader *parser.Reader) (*[]ManalispType, error) {
-	sequence := []ManalispType{}
+func readSequence(reader *parser.Reader) (*[]ApocalispType, error) {
+	sequence := []ApocalispType{}
 	for form, err := readForm(reader); form != nil || err != nil; form, err = readForm(reader) {
 		if err != nil {
 			return nil, err
@@ -65,47 +65,47 @@ func readSequence(reader *parser.Reader) (*[]ManalispType, error) {
 	return &sequence, nil
 }
 
-func readAtom(token *string) (*ManalispType, error) {
+func readAtom(token *string) (*ApocalispType, error) {
 	i, err := strconv.ParseInt(*token, 10, 64)
 	if err == nil {
-		return &ManalispType{Integer: &i}, nil
+		return &ApocalispType{Integer: &i}, nil
 	}
-	return &ManalispType{Symbol: token}, nil
+	return &ApocalispType{Symbol: token}, nil
 }
 
-func readList(reader *parser.Reader) (*ManalispType, error) {
+func readList(reader *parser.Reader) (*ApocalispType, error) {
 	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
 	} else {
-		return &ManalispType{List: sequence}, nil
+		return &ApocalispType{List: sequence}, nil
 	}
 }
 
-func readVector(reader *parser.Reader) (*ManalispType, error) {
+func readVector(reader *parser.Reader) (*ApocalispType, error) {
 	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
 	} else {
-		return &ManalispType{Vector: sequence}, nil
+		return &ApocalispType{Vector: sequence}, nil
 	}
 }
 
-func readHashmap(reader *parser.Reader) (*ManalispType, error) {
+func readHashmap(reader *parser.Reader) (*ApocalispType, error) {
 	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
 	} else {
-		return &ManalispType{Hashmap: sequence}, nil
+		return &ApocalispType{Hashmap: sequence}, nil
 	}
 }
 
-func readPrefixExpansion(reader *parser.Reader, symbol string) (*ManalispType, error) {
+func readPrefixExpansion(reader *parser.Reader, symbol string) (*ApocalispType, error) {
 	if form, err := readForm(reader); err != nil {
 		return nil, err
 	} else if form != nil {
-		sequence := []ManalispType{ManalispType{Symbol: &symbol}, *form}
-		return &ManalispType{List: &sequence}, nil
+		sequence := []ApocalispType{ApocalispType{Symbol: &symbol}, *form}
+		return &ApocalispType{List: &sequence}, nil
 	} else {
 		return nil, nil
 	}

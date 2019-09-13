@@ -1,11 +1,11 @@
-package manalisp
+package apocalisp
 
 import (
 	"errors"
 	"fmt"
 )
 
-func Rep(sexpr string, environment *Environment, eval func(*ManalispType, *Environment) (*ManalispType, error)) (string, error) {
+func Rep(sexpr string, environment *Environment, eval func(*ApocalispType, *Environment) (*ApocalispType, error)) (string, error) {
 	t, err := read(sexpr)
 	if err != nil {
 		return "", err
@@ -21,11 +21,11 @@ func Rep(sexpr string, environment *Environment, eval func(*ManalispType, *Envir
 	return print(evaluated), nil
 }
 
-func NoEval(node *ManalispType, environment *Environment) (*ManalispType, error) {
+func NoEval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
 	return node, nil
 }
 
-func Step2Eval(node *ManalispType, environment *Environment) (*ManalispType, error) {
+func Step2Eval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
 	if !node.IsList() {
 		if t, err := evalAst(node, environment, Step2Eval); err == nil {
 			return t, nil
@@ -54,7 +54,7 @@ func Step2Eval(node *ManalispType, environment *Environment) (*ManalispType, err
 	return nil, errors.New("Unexpected behavior.")
 }
 
-func Step3Eval(node *ManalispType, environment *Environment) (*ManalispType, error) {
+func Step3Eval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
 	if !node.IsList() {
 		if t, err := evalAst(node, environment, Step3Eval); err == nil {
 			return t, nil
@@ -90,15 +90,15 @@ func Step3Eval(node *ManalispType, environment *Environment) (*ManalispType, err
 	return nil, errors.New("Unexpected behavior.")
 }
 
-func read(sexpr string) (*ManalispType, error) {
+func read(sexpr string) (*ApocalispType, error) {
 	return Parse(sexpr)
 }
 
-func print(node *ManalispType) string {
+func print(node *ApocalispType) string {
 	return node.ToString()
 }
 
-func evalAst(node *ManalispType, environment *Environment, eval func(*ManalispType, *Environment) (*ManalispType, error)) (*ManalispType, error) {
+func evalAst(node *ApocalispType, environment *Environment, eval func(*ApocalispType, *Environment) (*ApocalispType, error)) (*ApocalispType, error) {
 	if node.IsSymbol() {
 		f := environment.Get(node.AsSymbol())
 		return &f, nil

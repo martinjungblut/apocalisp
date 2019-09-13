@@ -29,7 +29,7 @@ func main() {
 		fmt.Print("Error while calling 'os.Getwd()'.")
 		os.Exit(1)
 	}
-	historyFilePath := filepath.Join(cwd, ".manalisp_history")
+	historyFilePath := filepath.Join(cwd, ".apocalisp_history")
 
 	line := liner.NewLiner()
 	defer line.Close()
@@ -49,7 +49,7 @@ func main() {
 	}()
 
 	// repl
-	fmt.Print("This is manaLISP.\n")
+	fmt.Print("This is apocaLISP.\n")
 	for {
 		if sexpr, err := line.Prompt("user> "); err == nil {
 			line.AppendHistory(sexpr)

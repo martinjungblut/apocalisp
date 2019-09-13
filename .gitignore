@@ -1,0 +1,8 @@
+*
+
+!.gitignore
+!Makefile
+!run
+!src
+!src/step**
+!src/apocalisp**

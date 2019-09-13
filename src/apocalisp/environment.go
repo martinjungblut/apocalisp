@@ -1,12 +1,12 @@
-package manalisp
+package apocalisp
 
 type Environment struct {
 	outer *Environment
-	table map[string]ManalispType
+	table map[string]ApocalispType
 }
 
 func NewEnvironment(outer *Environment) *Environment {
-	table := make(map[string]ManalispType)
+	table := make(map[string]ApocalispType)
 	return &Environment{
 		table: table,
 		outer: outer,
@@ -16,49 +16,49 @@ func NewEnvironment(outer *Environment) *Environment {
 func DefaultEnvironment() *Environment {
 	env := NewEnvironment(nil)
 
-	env.SetFunction("+", func(inputs ...ManalispType) ManalispType {
+	env.SetFunction("+", func(inputs ...ApocalispType) ApocalispType {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			if input.IsInteger() {
 				r += *input.Integer
 			}
 		}
-		return ManalispType{Integer: &r}
+		return ApocalispType{Integer: &r}
 	})
 
-	env.SetFunction("-", func(inputs ...ManalispType) ManalispType {
+	env.SetFunction("-", func(inputs ...ApocalispType) ApocalispType {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r -= *input.Integer
 		}
-		return ManalispType{Integer: &r}
+		return ApocalispType{Integer: &r}
 	})
 
-	env.SetFunction("/", func(inputs ...ManalispType) ManalispType {
+	env.SetFunction("/", func(inputs ...ApocalispType) ApocalispType {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r /= *input.Integer
 		}
-		return ManalispType{Integer: &r}
+		return ApocalispType{Integer: &r}
 	})
 
-	env.SetFunction("*", func(inputs ...ManalispType) ManalispType {
+	env.SetFunction("*", func(inputs ...ApocalispType) ApocalispType {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r *= *input.Integer
 		}
-		return ManalispType{Integer: &r}
+		return ApocalispType{Integer: &r}
 	})
 
 	return env
 }
 
-func (env *Environment) Set(symbol string, node ManalispType) {
+func (env *Environment) Set(symbol string, node ApocalispType) {
 	env.table[symbol] = node
 }
 
-func (env *Environment) SetFunction(symbol string, nativeFunction func(...ManalispType) ManalispType) {
-	env.table[symbol] = ManalispType{
+func (env *Environment) SetFunction(symbol string, nativeFunction func(...ApocalispType) ApocalispType) {
+	env.table[symbol] = ApocalispType{
 		NativeFunction: &nativeFunction,
 		Symbol:         &symbol,
 	}
@@ -78,7 +78,7 @@ func (env *Environment) Find(symbol string) *Environment {
 	return nil
 }
 
-func (env *Environment) Get(symbol string) ManalispType {
+func (env *Environment) Get(symbol string) ApocalispType {
 	if e := env.Find(symbol); e != nil {
 		for key, value := range e.table {
 			if key == symbol {
@@ -87,5 +87,5 @@ func (env *Environment) Get(symbol string) ManalispType {
 		}
 	}
 
-	return ManalispType{Symbol: &symbol}
+	return ApocalispType{Symbol: &symbol}
 }
