@@ -6,19 +6,22 @@ import (
 )
 
 func Rep(sexpr string, environment *Environment, eval func(*ApocalispType, *Environment) (*ApocalispType, error)) (string, error) {
-	t, err := read(sexpr)
+	// read
+	t, err := Parse(sexpr)
 	if err != nil {
 		return "", err
 	} else if t == nil {
 		return "", nil
 	}
 
+	// eval
 	evaluated, err := eval(t, environment)
 	if err != nil {
 		return "", err
 	}
 
-	return print(evaluated), nil
+	// print
+	return evaluated.ToString(), nil
 }
 
 func NoEval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
@@ -90,18 +93,13 @@ func Step3Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 	return nil, errors.New("Unexpected behavior.")
 }
 
-func read(sexpr string) (*ApocalispType, error) {
-	return Parse(sexpr)
-}
-
-func print(node *ApocalispType) string {
-	return node.ToString()
-}
-
 func evalAst(node *ApocalispType, environment *Environment, eval func(*ApocalispType, *Environment) (*ApocalispType, error)) (*ApocalispType, error) {
 	if node.IsSymbol() {
-		f := environment.Get(node.AsSymbol())
-		return &f, nil
+		if f, err := environment.Get(node.AsSymbol()); err != nil {
+			return nil, err
+		} else {
+			return &f, nil
+		}
 	}
 
 	if node.IsList() {
@@ -129,15 +127,17 @@ func evalAst(node *ApocalispType, environment *Environment, eval func(*Apocalisp
 	}
 
 	if node.IsHashmap() {
-		all := NewHashmap()
-		for _, element := range node.AsHashmap() {
-			if evaluated, err := eval(&element, environment); err == nil {
-				all.AddToHashmap(*evaluated)
-			} else {
+		currentHashmap := node.AsHashmap()
+		newHashmap := NewHashmap()
+		for i, j := 0, 1; i < len(currentHashmap); i, j = i+2, j+2 {
+			newHashmap.AddToHashmap(currentHashmap[i])
+			if evaluated, err := eval(&(currentHashmap[j]), environment); err != nil {
 				return nil, err
+			} else {
+				newHashmap.AddToHashmap(*evaluated)
 			}
 		}
-		return all, nil
+		return newHashmap, nil
 	}
 
 	return node, nil
