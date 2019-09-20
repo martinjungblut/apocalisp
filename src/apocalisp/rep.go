@@ -30,24 +30,22 @@ func NoEval(node *ApocalispType, environment *Environment) (*ApocalispType, erro
 
 func Step2Eval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
 	if !node.IsList() {
-		if t, err := evalAst(node, environment, Step2Eval); err == nil {
-			return t, nil
-		} else {
+		if t, err := evalAst(node, environment, Step2Eval); err != nil {
 			return nil, err
+		} else {
+			return t, nil
 		}
 	} else if node.IsEmptyList() {
 		return node, nil
 	} else if node.IsList() {
 		if container, err := evalAst(node, environment, Step2Eval); err == nil {
-			objects := container.AsList()
-			function := objects[1]
-			parameters := objects[2:]
+			first, rest := container.AsList()[1], container.AsList()[2:]
 
-			if function.IsNativeFunction() {
-				result := function.CallNativeFunction(parameters...)
+			if first.IsNativeFunction() {
+				result := first.CallNativeFunction(rest...)
 				return &result, nil
 			} else {
-				return nil, errors.New(fmt.Sprintf("Symbol is not a function: %s", function.ToString()))
+				return nil, errors.New(fmt.Sprintf("Symbol is not a function: `%s`.", first.ToString()))
 			}
 		} else {
 			return nil, err
@@ -59,31 +57,52 @@ func Step2Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 
 func Step3Eval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
 	if !node.IsList() {
-		if t, err := evalAst(node, environment, Step3Eval); err == nil {
-			return t, nil
-		} else {
+		if t, err := evalAst(node, environment, Step3Eval); err != nil {
 			return nil, err
+		} else {
+			return t, nil
 		}
 	} else if node.IsEmptyList() {
 		return node, nil
 	} else if node.IsList() {
-		if container, err := evalAst(node, environment, Step3Eval); err == nil {
-			objects := container.AsList()
-			function := objects[1]
-			parameters := objects[2:]
+		first, rest := node.AsList()[0], node.AsList()[1:]
 
-			if function.IsNativeFunction() {
-				result := function.CallNativeFunction(parameters...)
-				return &result, nil
-			} else if function.IsSymbol() && function.AsSymbol() == "def!" {
-				if len(parameters) == 2 && parameters[0].IsSymbol() {
-					environment.Set(parameters[0].AsSymbol(), parameters[1])
-					return &parameters[1], nil
-				} else {
-					return nil, errors.New("Invalid syntax.")
-				}
+		if first.IsSymbol() && first.AsSymbol() == "def!" {
+			if len(rest) != 2 || !rest[0].IsSymbol() {
+				return nil, errors.New("Invalid syntax for `def!`.")
 			} else {
-				return nil, errors.New(fmt.Sprintf("Symbol is not a function: %s", function.ToString()))
+				if e, ierr := Step3Eval(&rest[1], environment); ierr == nil {
+					environment.Set(rest[0].AsSymbol(), *e)
+					return e, nil
+				} else {
+					return nil, ierr
+				}
+			}
+		} else if first.IsSymbol() && first.AsSymbol() == "let*" {
+			if len(rest) != 2 || !rest[0].EvenIterable() {
+				return nil, errors.New("Invalid syntax for `let*`.")
+			} else {
+				letEnvironment := NewEnvironment(environment)
+
+				bindings := rest[0].Iterable()
+				for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
+					s := bindings[i].ToString()
+					if e, ierr := Step3Eval(&bindings[j], letEnvironment); ierr == nil {
+						letEnvironment.Set(s, *e)
+					} else {
+						return nil, ierr
+					}
+				}
+
+				return Step3Eval(&rest[1], letEnvironment)
+			}
+		} else if evaluated, err := evalAst(node, environment, Step3Eval); err == nil {
+			first, rest := evaluated.AsList()[1], evaluated.AsList()[2:]
+			if first.IsNativeFunction() {
+				result := first.CallNativeFunction(rest...)
+				return &result, nil
+			} else {
+				return nil, errors.New(fmt.Sprintf("Symbol is not a function: `%s`.", first.ToString()))
 			}
 		} else {
 			return nil, err

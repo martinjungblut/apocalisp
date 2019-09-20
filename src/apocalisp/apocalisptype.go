@@ -28,7 +28,7 @@ func (node *ApocalispType) ToString() string {
 	if node != nil {
 		if node.IsInteger() {
 			return fmt.Sprintf("%d", node.AsInteger())
-		} else if node.IsSymbol() {
+		} else if node.IsSymbol() || node.IsNativeFunction() {
 			return node.AsSymbol()
 		} else if node.IsList() {
 			return wrapSequence(node.List, "(", ")")
@@ -36,8 +36,6 @@ func (node *ApocalispType) ToString() string {
 			return wrapSequence(node.Vector, "[", "]")
 		} else if node.IsHashmap() {
 			return wrapSequence(node.Hashmap, "{", "}")
-		} else if node.IsNativeFunction() {
-			return node.AsSymbol()
 		} else {
 			return ""
 		}
@@ -137,4 +135,29 @@ func (node *ApocalispType) IsNativeFunction() bool {
 
 func (node *ApocalispType) CallNativeFunction(parameters ...ApocalispType) ApocalispType {
 	return (*node.NativeFunction)(parameters...)
+}
+
+// TODO: think more about this
+func (node *ApocalispType) EvenIterable() bool {
+	if node.IsList() {
+		return len(*node.List)%2 == 0 && len(*node.List) > 0
+	}
+
+	if node.IsVector() {
+		return len(*node.Vector)%2 == 0 && len(*node.Vector) > 0
+	}
+
+	return false
+}
+
+func (node *ApocalispType) Iterable() []ApocalispType {
+	if node.IsList() {
+		return *node.List
+	}
+
+	if node.IsVector() {
+		return *node.Vector
+	}
+
+	return make([]ApocalispType, 1)
 }
