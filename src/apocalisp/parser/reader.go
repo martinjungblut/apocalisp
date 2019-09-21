@@ -36,10 +36,10 @@ func (r *Reader) Next() (*string, error) {
 }
 
 func (r *Reader) readAhead() error {
-	reachedEnd := func() bool { return r.readAheadPosition >= len(r.tokens) }
+	reachedEnd := func() bool { return r.readAheadPosition == len(r.tokens) }
 	currentToken := func() string { return r.tokens[r.readAheadPosition] }
 	unclosedString := func(token string) bool {
-		return strings.HasPrefix(token, "\"") && !strings.HasSuffix(token, "\"")
+		return strings.HasPrefix(token, "\"") && (len(token) == 1 || !strings.HasSuffix(token, "\""))
 	}
 
 	if !reachedEnd() {
@@ -69,8 +69,7 @@ func (r *Reader) readAhead() error {
 		return errors.New("unexpected ']'")
 	} else if r.bracesCount < 0 {
 		return errors.New("unexpected '}'")
-	}
-	if reachedEnd() && (r.parensCount > 0 || r.bracketsCount > 0 || r.bracesCount > 0) {
+	} else if reachedEnd() && (r.parensCount > 0 || r.bracketsCount > 0 || r.bracesCount > 0) {
 		return errors.New("unexpected EOF")
 	}
 
