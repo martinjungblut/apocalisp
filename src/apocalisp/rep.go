@@ -39,14 +39,7 @@ func Step2Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 		return node, nil
 	} else if node.IsList() {
 		if container, err := evalAst(node, environment, Step2Eval); err == nil {
-			first, rest := container.AsList()[1], container.AsList()[2:]
-
-			if first.IsNativeFunction() {
-				result := first.CallNativeFunction(rest...)
-				return &result, nil
-			} else {
-				return nil, errors.New(fmt.Sprintf("Symbol is not a function: `%s`.", first.ToString()))
-			}
+			return evalNativeFunction(container)
 		} else {
 			return nil, err
 		}
@@ -68,48 +61,65 @@ func Step3Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 		first, rest := node.AsList()[0], node.AsList()[1:]
 
 		if first.IsSymbol() && first.AsSymbol() == "def!" {
-			if len(rest) != 2 || !rest[0].IsSymbol() {
-				return nil, errors.New("Invalid syntax for `def!`.")
-			} else {
-				if e, ierr := Step3Eval(&rest[1], environment); ierr == nil {
-					environment.Set(rest[0].AsSymbol(), *e)
-					return e, nil
-				} else {
-					return nil, ierr
-				}
-			}
+			return evalSpecialFormDef(Step3Eval, environment)(rest)
 		} else if first.IsSymbol() && first.AsSymbol() == "let*" {
-			if len(rest) != 2 || !rest[0].EvenIterable() {
-				return nil, errors.New("Invalid syntax for `let*`.")
-			} else {
-				letEnvironment := NewEnvironment(environment)
-
-				bindings := rest[0].Iterable()
-				for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
-					s := bindings[i].ToString()
-					if e, ierr := Step3Eval(&bindings[j], letEnvironment); ierr == nil {
-						letEnvironment.Set(s, *e)
-					} else {
-						return nil, ierr
-					}
-				}
-
-				return Step3Eval(&rest[1], letEnvironment)
-			}
-		} else if evaluated, err := evalAst(node, environment, Step3Eval); err == nil {
-			first, rest := evaluated.AsList()[1], evaluated.AsList()[2:]
-			if first.IsNativeFunction() {
-				result := first.CallNativeFunction(rest...)
-				return &result, nil
-			} else {
-				return nil, errors.New(fmt.Sprintf("Symbol is not a function: `%s`.", first.ToString()))
-			}
+			return evalSpecialFormLet(Step3Eval, environment)(rest)
+		} else if container, err := evalAst(node, environment, Step3Eval); err == nil {
+			return evalNativeFunction(container)
 		} else {
 			return nil, err
 		}
 	}
 
 	return nil, errors.New("Unexpected behavior.")
+}
+
+func evalSpecialFormDef(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
+	return func(rest []ApocalispType) (*ApocalispType, error) {
+		if len(rest) != 2 || !rest[0].IsSymbol() {
+			return nil, errors.New("Invalid syntax for `def!`.")
+		} else {
+			if e, ierr := eval(&rest[1], environment); ierr == nil {
+				environment.Set(rest[0].AsSymbol(), *e)
+				return e, nil
+			} else {
+				return nil, ierr
+			}
+		}
+	}
+}
+
+func evalSpecialFormLet(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
+	return func(rest []ApocalispType) (*ApocalispType, error) {
+		if len(rest) != 2 || !rest[0].EvenIterable() {
+			return nil, errors.New("Invalid syntax for `let*`.")
+		} else {
+			letEnvironment := NewEnvironment(environment)
+
+			bindings := rest[0].Iterable()
+			for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
+				s := bindings[i].ToString()
+				if e, ierr := eval(&bindings[j], letEnvironment); ierr == nil {
+					letEnvironment.Set(s, *e)
+				} else {
+					return nil, ierr
+				}
+			}
+
+			return eval(&rest[1], letEnvironment)
+		}
+	}
+}
+
+func evalNativeFunction(node *ApocalispType) (*ApocalispType, error) {
+	first, rest := node.AsList()[1], node.AsList()[2:]
+
+	if first.IsNativeFunction() {
+		result := first.CallNativeFunction(rest...)
+		return &result, nil
+	} else {
+		return nil, errors.New(fmt.Sprintf("Symbol is not a function: `%s`.", first.ToString()))
+	}
 }
 
 func evalAst(node *ApocalispType, environment *Environment, eval func(*ApocalispType, *Environment) (*ApocalispType, error)) (*ApocalispType, error) {
