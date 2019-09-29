@@ -40,10 +40,10 @@ func Test_Next_Should_Return_Nil_If_There_Are_No_More_Tokens(t *testing.T) {
 }
 
 func Test_Next_Should_Return_Error_If_Syntax_Is_Invalid(t *testing.T) {
-	parensMessage := "unexpected ')'"
-	bracesMessage := "unexpected '}'"
-	bracketsMessage := "unexpected ']'"
-	eofMessage := "unexpected EOF"
+	parensMessage := "Error: unexpected ')'."
+	bracesMessage := "Error: unexpected '}'."
+	bracketsMessage := "Error: unexpected ']'."
+	eofMessage := "Error: unexpected EOF."
 
 	mapping := map[string]string{
 		")":      parensMessage,

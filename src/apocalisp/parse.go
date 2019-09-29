@@ -1,8 +1,8 @@
 package apocalisp
 
 import (
-	"fmt"
 	"apocalisp/parser"
+	"fmt"
 	"strconv"
 )
 

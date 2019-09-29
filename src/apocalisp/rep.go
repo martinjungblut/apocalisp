@@ -94,7 +94,7 @@ func evalSpecialFormLet(eval func(*ApocalispType, *Environment) (*ApocalispType,
 		if len(rest) != 2 || !rest[0].EvenIterable() {
 			return nil, errors.New("Error: Invalid syntax for `let*`.")
 		} else {
-			letEnvironment := NewEnvironment(environment)
+			letEnvironment := NewEnvironment(environment, []string{}, []ApocalispType{})
 
 			bindings := rest[0].Iterable()
 			for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {

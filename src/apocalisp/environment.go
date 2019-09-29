@@ -10,12 +10,21 @@ type Environment struct {
 	table map[string]ApocalispType
 }
 
-func NewEnvironment(outer *Environment) *Environment {
+func NewEnvironment(outer *Environment, symbols []string, nodes []ApocalispType) *Environment {
 	table := make(map[string]ApocalispType)
-	return &Environment{
+
+	environment := &Environment{
 		table: table,
 		outer: outer,
 	}
+
+	for i := 0; i < len(symbols); i++ {
+		if i < len(nodes) {
+			environment.Set(symbols[i], nodes[i])
+		}
+	}
+
+	return environment
 }
 
 func (env *Environment) Set(symbol string, node ApocalispType) {
@@ -56,7 +65,7 @@ func (env *Environment) Get(symbol string) (ApocalispType, error) {
 }
 
 func DefaultEnvironment() *Environment {
-	env := NewEnvironment(nil)
+	env := NewEnvironment(nil, []string{}, []ApocalispType{})
 
 	env.SetNativeFunction("+", func(inputs ...ApocalispType) ApocalispType {
 		r := *inputs[0].Integer
