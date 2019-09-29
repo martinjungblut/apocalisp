@@ -58,19 +58,19 @@ func (r *Reader) readAhead() error {
 			r.bracesCount--
 		default:
 			if unclosedString(token) {
-				return errors.New("unexpected EOF")
+				return errors.New("Error: unexpected EOF.")
 			}
 		}
 	}
 
 	if r.parensCount < 0 {
-		return errors.New("unexpected ')'")
+		return errors.New("Error: unexpected ')'.")
 	} else if r.bracketsCount < 0 {
-		return errors.New("unexpected ']'")
+		return errors.New("Error: unexpected ']'.")
 	} else if r.bracesCount < 0 {
-		return errors.New("unexpected '}'")
+		return errors.New("Error: unexpected '}'.")
 	} else if reachedEnd() && (r.parensCount > 0 || r.bracketsCount > 0 || r.bracesCount > 0) {
-		return errors.New("unexpected EOF")
+		return errors.New("Error: unexpected EOF.")
 	}
 
 	r.readAheadPosition++
