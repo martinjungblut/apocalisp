@@ -52,7 +52,7 @@ func (env *Environment) Get(symbol string) (ApocalispType, error) {
 		}
 	}
 
-	return ApocalispType{}, errors.New(fmt.Sprintf("Symbol not found: %s", symbol))
+	return ApocalispType{}, errors.New(fmt.Sprintf("Error: '%s' not found.", symbol))
 }
 
 func DefaultEnvironment() *Environment {
