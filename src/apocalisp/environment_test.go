@@ -9,6 +9,7 @@ func Test_NewEnvironment_Should_Add_Bindings_To_Environment_More_Symbols_Than_No
 	secondNode := ApocalispType{Symbol: &secondValue}
 
 	environment := NewEnvironment(nil, []string{"a", "b", "c"}, []ApocalispType{firstNode, secondNode})
+
 	if node, err := environment.Get("a"); err == nil {
 		if !node.IsSymbol() || node.AsSymbol() != "firstValue" {
 			t.Error("Symbol not set when calling NewEnvironment().")
@@ -16,6 +17,7 @@ func Test_NewEnvironment_Should_Add_Bindings_To_Environment_More_Symbols_Than_No
 	} else {
 		t.Error("Symbol not set when calling NewEnvironment().")
 	}
+
 	if node, err := environment.Get("b"); err == nil {
 		if !node.IsSymbol() || node.AsSymbol() != "secondValue" {
 			t.Error("Symbol not set when calling NewEnvironment().")
@@ -23,6 +25,7 @@ func Test_NewEnvironment_Should_Add_Bindings_To_Environment_More_Symbols_Than_No
 	} else {
 		t.Error("Symbol not set when calling NewEnvironment().")
 	}
+
 	if _, err := environment.Get("c"); err == nil {
 		t.Error("Symbol should not have been set, but was.")
 	}
@@ -35,6 +38,7 @@ func Test_NewEnvironment_Should_Add_Bindings_To_Environment_More_Nodes_Than_Symb
 	secondNode := ApocalispType{Symbol: &secondValue}
 
 	environment := NewEnvironment(nil, []string{"a"}, []ApocalispType{firstNode, secondNode})
+
 	if node, err := environment.Get("a"); err == nil {
 		if !node.IsSymbol() || node.AsSymbol() != "firstValue" {
 			t.Error("Symbol not set when calling NewEnvironment().")
@@ -42,9 +46,11 @@ func Test_NewEnvironment_Should_Add_Bindings_To_Environment_More_Nodes_Than_Symb
 	} else {
 		t.Error("Symbol not set when calling NewEnvironment().")
 	}
+
 	if _, err := environment.Get("b"); err == nil {
 		t.Error("Symbol should not have been set, but was.")
 	}
+
 	if _, err := environment.Get("c"); err == nil {
 		t.Error("Symbol should not have been set, but was.")
 	}

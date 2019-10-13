@@ -35,7 +35,9 @@ func (node *ApocalispType) ToString() string {
 			return strconv.FormatBool(node.AsBoolean())
 		} else if node.IsInteger() {
 			return fmt.Sprintf("%d", node.AsInteger())
-		} else if node.IsSymbol() || node.IsNativeFunction() {
+		} else if node.IsNativeFunction() {
+			return "#<function>"
+		} else if node.IsSymbol() {
 			return node.AsSymbol()
 		} else if node.IsList() {
 			return wrapSequence(node.List, "(", ")")
