@@ -70,6 +70,21 @@ func readAtom(token *string) (*ApocalispType, error) {
 	if err == nil {
 		return &ApocalispType{Integer: &i}, nil
 	}
+
+	if *token == "nil" {
+		return &ApocalispType{Nil: true}, nil
+	}
+
+	if *token == "true" {
+		v := true
+		return &ApocalispType{Boolean: &v}, nil
+	}
+
+	if *token == "false" {
+		v := false
+		return &ApocalispType{Boolean: &v}, nil
+	}
+
 	return &ApocalispType{Symbol: token}, nil
 }
 

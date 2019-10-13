@@ -74,6 +74,32 @@ func Step3Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
+func Step4Eval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
+	if !node.IsList() {
+		if t, err := evalAst(node, environment, Step4Eval); err != nil {
+			return nil, err
+		} else {
+			return t, nil
+		}
+	} else if node.IsEmptyList() {
+		return node, nil
+	} else if node.IsList() {
+		first, rest := node.AsList()[0], node.AsList()[1:]
+
+		if first.IsSymbol() && first.AsSymbol() == "def!" {
+			return evalSpecialFormDef(Step4Eval, environment)(rest)
+		} else if first.IsSymbol() && first.AsSymbol() == "let*" {
+			return evalSpecialFormLet(Step4Eval, environment)(rest)
+		} else if container, err := evalAst(node, environment, Step4Eval); err == nil {
+			return evalNativeFunction(container)
+		} else {
+			return nil, err
+		}
+	}
+
+	return nil, errors.New("Error: Unexpected behavior.")
+}
+
 func evalSpecialFormDef(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
 	return func(rest []ApocalispType) (*ApocalispType, error) {
 		if len(rest) != 2 || !rest[0].IsSymbol() {

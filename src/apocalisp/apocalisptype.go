@@ -2,10 +2,13 @@ package apocalisp
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 type ApocalispType struct {
+	Nil            bool
+	Boolean        *bool
 	Integer        *int64
 	Symbol         *string
 	List           *[]ApocalispType
@@ -26,7 +29,11 @@ func (node *ApocalispType) ToString() string {
 	}
 
 	if node != nil {
-		if node.IsInteger() {
+		if node.IsNil() {
+			return "nil"
+		} else if node.IsBoolean() {
+			return strconv.FormatBool(node.AsBoolean())
+		} else if node.IsInteger() {
 			return fmt.Sprintf("%d", node.AsInteger())
 		} else if node.IsSymbol() || node.IsNativeFunction() {
 			return node.AsSymbol()
@@ -42,6 +49,20 @@ func (node *ApocalispType) ToString() string {
 	} else {
 		return ""
 	}
+}
+
+// nil
+func (node *ApocalispType) IsNil() bool {
+	return node.Nil
+}
+
+// boolean
+func (node *ApocalispType) IsBoolean() bool {
+	return node.Boolean != nil
+}
+
+func (node *ApocalispType) AsBoolean() bool {
+	return *node.Boolean
 }
 
 // integer
