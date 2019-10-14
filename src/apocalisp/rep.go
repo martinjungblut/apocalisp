@@ -164,24 +164,22 @@ func specialFormIf(eval func(*ApocalispType, *Environment) (*ApocalispType, erro
 
 		if length < 2 || length > 3 {
 			return nil, errors.New("Error: Invalid syntax for `if`.")
-		} else {
-			if condition, err := eval(&rest[0], environment); err != nil {
+		} else if condition, err := eval(&rest[0], environment); err != nil {
+			return nil, err
+		} else if !condition.IsNil() && !condition.IsFalse() {
+			if evaluated, err := eval(&rest[1], environment); err != nil {
 				return nil, err
-			} else if !condition.IsNil() && !condition.IsFalse() {
-				if evaluated, err := eval(&rest[1], environment); err != nil {
-					return nil, err
-				} else {
-					return evaluated, nil
-				}
-			} else if length == 3 {
-				if evaluated, err := eval(&rest[2], environment); err != nil {
-					return nil, err
-				} else {
-					return evaluated, nil
-				}
 			} else {
-				return NewNil(), nil
+				return evaluated, nil
 			}
+		} else if length == 3 {
+			if evaluated, err := eval(&rest[2], environment); err != nil {
+				return nil, err
+			} else {
+				return evaluated, nil
+			}
+		} else {
+			return NewNil(), nil
 		}
 	}
 }
