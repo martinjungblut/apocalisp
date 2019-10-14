@@ -61,9 +61,9 @@ func Step3Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 		first, rest := node.AsList()[0], node.AsList()[1:]
 
 		if first.IsSymbol() && first.AsSymbol() == "def!" {
-			return evalSpecialFormDef(Step3Eval, environment)(rest)
+			return specialFormDef(Step3Eval, environment)(rest)
 		} else if first.IsSymbol() && first.AsSymbol() == "let*" {
-			return evalSpecialFormLet(Step3Eval, environment)(rest)
+			return specialFormLet(Step3Eval, environment)(rest)
 		} else if container, err := evalAst(node, environment, Step3Eval); err == nil {
 			return evalNativeFunction(container)
 		} else {
@@ -87,9 +87,11 @@ func Step4Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 		first, rest := node.AsList()[0], node.AsList()[1:]
 
 		if first.IsSymbol() && first.AsSymbol() == "def!" {
-			return evalSpecialFormDef(Step4Eval, environment)(rest)
+			return specialFormDef(Step4Eval, environment)(rest)
 		} else if first.IsSymbol() && first.AsSymbol() == "let*" {
-			return evalSpecialFormLet(Step4Eval, environment)(rest)
+			return specialFormLet(Step4Eval, environment)(rest)
+		} else if first.IsSymbol() && first.AsSymbol() == "do" {
+			return specialFormDo(Step4Eval, environment)(rest)
 		} else if container, err := evalAst(node, environment, Step4Eval); err == nil {
 			return evalNativeFunction(container)
 		} else {
@@ -100,7 +102,7 @@ func Step4Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
-func evalSpecialFormDef(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
+func specialFormDef(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
 	return func(rest []ApocalispType) (*ApocalispType, error) {
 		if len(rest) != 2 || !rest[0].IsSymbol() {
 			return nil, errors.New("Error: Invalid syntax for `def!`.")
@@ -115,7 +117,7 @@ func evalSpecialFormDef(eval func(*ApocalispType, *Environment) (*ApocalispType,
 	}
 }
 
-func evalSpecialFormLet(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
+func specialFormLet(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
 	return func(rest []ApocalispType) (*ApocalispType, error) {
 		if len(rest) != 2 || !rest[0].EvenIterable() {
 			return nil, errors.New("Error: Invalid syntax for `let*`.")
@@ -133,6 +135,23 @@ func evalSpecialFormLet(eval func(*ApocalispType, *Environment) (*ApocalispType,
 			}
 
 			return eval(&rest[1], letEnvironment)
+		}
+	}
+}
+
+func specialFormDo(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
+	return func(rest []ApocalispType) (*ApocalispType, error) {
+		if len(rest) < 1 {
+			return nil, errors.New("Error: Invalid syntax for `do`.")
+		} else {
+			var evaluated *ApocalispType
+			var err error
+			for i := 0; i < len(rest); i++ {
+				if evaluated, err = evalAst(&rest[i], environment, eval); err != nil {
+					return nil, err
+				}
+			}
+			return evaluated, nil
 		}
 	}
 }
