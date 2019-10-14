@@ -31,3 +31,47 @@ func Test_ToString_Symbol(t *testing.T) {
 		}
 	}
 }
+
+func Test_NewNil_Creates_Nil(t *testing.T) {
+	node := NewNil()
+	if !node.IsNil() {
+		t.Error("NewNil() failed.")
+	}
+}
+
+func Test_IsNil_Returns_True_If_Nil(t *testing.T) {
+	node := ApocalispType{Nil: true}
+	if !node.IsNil() {
+		t.Error("IsNil() failed.")
+	}
+}
+
+func Test_IsNil_Returns_False_If_Not_Nil(t *testing.T) {
+	node := ApocalispType{Nil: false}
+	if node.IsNil() {
+		t.Error("IsNil() failed.")
+	}
+}
+
+func Test_IsFalse_Returns_True_If_False_Boolean(t *testing.T) {
+	value := false
+	node := ApocalispType{Boolean: &value}
+	if !node.IsFalse() {
+		t.Error("IsFalse() failed.")
+	}
+}
+
+func Test_IsFalse_Returns_False_If_True_Boolean(t *testing.T) {
+	value := true
+	node := ApocalispType{Boolean: &value}
+	if node.IsFalse() {
+		t.Error("IsFalse() failed.")
+	}
+}
+
+func Test_IsFalse_Returns_False_If_Not_Boolean(t *testing.T) {
+	node := ApocalispType{}
+	if node.IsFalse() {
+		t.Error("IsFalse() failed.")
+	}
+}

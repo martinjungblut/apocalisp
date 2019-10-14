@@ -54,6 +54,10 @@ func (node *ApocalispType) ToString() string {
 }
 
 // nil
+func NewNil() *ApocalispType {
+	return &ApocalispType{Nil: true}
+}
+
 func (node *ApocalispType) IsNil() bool {
 	return node.Nil
 }
@@ -61,6 +65,10 @@ func (node *ApocalispType) IsNil() bool {
 // boolean
 func (node *ApocalispType) IsBoolean() bool {
 	return node.Boolean != nil
+}
+
+func (node *ApocalispType) IsFalse() bool {
+	return node.IsBoolean() && *node.Boolean == false
 }
 
 func (node *ApocalispType) AsBoolean() bool {
