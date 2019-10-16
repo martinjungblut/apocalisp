@@ -4,6 +4,7 @@ import (
 	"apocalisp/parser"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func Parse(sexpr string) (*ApocalispType, error) {
@@ -83,6 +84,10 @@ func readAtom(token *string) (*ApocalispType, error) {
 	if *token == "false" {
 		v := false
 		return &ApocalispType{Boolean: &v}, nil
+	}
+
+	if strings.HasPrefix(*token, "\"") && strings.HasSuffix(*token, "\"") {
+		return &ApocalispType{String: token}, nil
 	}
 
 	return &ApocalispType{Symbol: token}, nil

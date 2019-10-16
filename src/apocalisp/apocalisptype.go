@@ -11,6 +11,7 @@ type ApocalispType struct {
 	Boolean        *bool
 	Integer        *int64
 	Symbol         *string
+	String         *string
 	List           *[]ApocalispType
 	Vector         *[]ApocalispType
 	Hashmap        *[]ApocalispType
@@ -39,6 +40,8 @@ func (node *ApocalispType) ToString() string {
 			return "#<function>"
 		} else if node.IsSymbol() {
 			return node.AsSymbol()
+		} else if node.IsString() {
+			return node.AsString()
 		} else if node.IsList() {
 			return wrapSequence(node.List, "(", ")")
 		} else if node.IsVector() {
@@ -91,6 +94,15 @@ func (node *ApocalispType) IsSymbol() bool {
 
 func (node *ApocalispType) AsSymbol() string {
 	return *node.Symbol
+}
+
+// string
+func (node *ApocalispType) IsString() bool {
+	return node.String != nil
+}
+
+func (node *ApocalispType) AsString() string {
+	return *node.String
 }
 
 // list
