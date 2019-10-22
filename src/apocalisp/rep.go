@@ -146,14 +146,14 @@ func specialFormDo(eval func(*ApocalispType, *Environment) (*ApocalispType, erro
 		if len(rest) < 1 {
 			return nil, errors.New("Error: Invalid syntax for `do`.")
 		} else {
-			var evaluated *ApocalispType
-			var err error
-			for i := 0; i < len(rest); i++ {
-				if evaluated, err = evalAst(&rest[i], environment, eval); err != nil {
-					return nil, err
-				}
+			toEvaluate := &ApocalispType{List: &rest}
+			if evaluated, err := evalAst(toEvaluate, environment, eval); err != nil {
+				return nil, err
+			} else {
+				list := evaluated.AsList()
+				last := list[len(list)-1]
+				return &last, nil
 			}
-			return evaluated, nil
 		}
 	}
 }
