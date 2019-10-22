@@ -92,6 +92,8 @@ func Step4Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 			return specialFormLet(Step4Eval, environment)(rest)
 		} else if first.IsSymbol() && first.AsSymbol() == "do" {
 			return specialFormDo(Step4Eval, environment)(rest)
+		} else if first.IsSymbol() && (first.AsSymbol() == "fn*" || first.AsSymbol() == "λ") {
+			return specialFormFn(Step4Eval, environment)(rest)
 		} else if first.IsSymbol() && first.AsSymbol() == "if" {
 			return specialFormIf(Step4Eval, environment)(rest)
 		} else if container, err := evalAst(node, environment, Step4Eval); err == nil {
@@ -154,6 +156,35 @@ func specialFormDo(eval func(*ApocalispType, *Environment) (*ApocalispType, erro
 				last := list[len(list)-1]
 				return &last, nil
 			}
+		}
+	}
+}
+
+func specialFormFn(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
+	return func(rest []ApocalispType) (*ApocalispType, error) {
+		if len(rest) < 2 || !rest[0].IsList() || !rest[1].IsList() {
+			return nil, errors.New("Error: Invalid syntax for `fn*`.")
+		} else {
+			var symbols []string
+			for _, node := range rest[0].AsList() {
+				if node.IsSymbol() {
+					symbols = append(symbols, node.AsSymbol())
+				} else {
+					return nil, errors.New("Error: Invalid syntax for `fn*`.")
+				}
+			}
+
+			closure := func(args ...ApocalispType) ApocalispType {
+				newEnvironment := NewEnvironment(environment, symbols, args)
+				if result, err := eval(&rest[1], newEnvironment); err != nil {
+					errorMessage := err.Error()
+					return ApocalispType{String: &errorMessage}
+				} else {
+					return *result
+				}
+			}
+
+			return &ApocalispType{NativeFunction: &closure}, nil
 		}
 	}
 }
