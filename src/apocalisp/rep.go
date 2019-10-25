@@ -197,7 +197,7 @@ func specialFormIf(eval func(*ApocalispType, *Environment) (*ApocalispType, erro
 			return nil, errors.New("Error: Invalid syntax for `if`.")
 		} else if condition, err := eval(&rest[0], environment); err != nil {
 			return nil, err
-		} else if !condition.IsNil() && !condition.IsFalse() {
+		} else if !condition.IsNil() && !condition.IsBoolean(false) {
 			if evaluated, err := eval(&rest[1], environment); err != nil {
 				return nil, err
 			} else {

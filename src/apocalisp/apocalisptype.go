@@ -29,31 +29,30 @@ func (node *ApocalispType) ToString() string {
 		return fmt.Sprintf("%s%s%s", lWrap, strings.Join(tokens, " "), rWrap)
 	}
 
+	repr := ""
 	if node != nil {
+		node.IfBoolean(func(value bool) {
+			repr = strconv.FormatBool(value)
+		})
 		if node.IsNil() {
-			return "nil"
-		} else if node.IsBoolean() {
-			return strconv.FormatBool(node.AsBoolean())
+			repr = "nil"
 		} else if node.IsInteger() {
-			return fmt.Sprintf("%d", node.AsInteger())
+			repr = fmt.Sprintf("%d", node.AsInteger())
 		} else if node.IsNativeFunction() {
-			return "#<function>"
+			repr = "#<function>"
 		} else if node.IsSymbol() {
-			return node.AsSymbol()
+			repr = node.AsSymbol()
 		} else if node.IsString() {
-			return node.AsString()
+			repr = node.AsString()
 		} else if node.IsList() {
-			return wrapSequence(node.List, "(", ")")
+			repr = wrapSequence(node.List, "(", ")")
 		} else if node.IsVector() {
-			return wrapSequence(node.Vector, "[", "]")
+			repr = wrapSequence(node.Vector, "[", "]")
 		} else if node.IsHashmap() {
-			return wrapSequence(node.Hashmap, "{", "}")
-		} else {
-			return ""
+			repr = wrapSequence(node.Hashmap, "{", "}")
 		}
-	} else {
-		return ""
 	}
+	return repr
 }
 
 // nil
@@ -66,16 +65,17 @@ func (node *ApocalispType) IsNil() bool {
 }
 
 // boolean
-func (node *ApocalispType) IsBoolean() bool {
-	return node.Boolean != nil
+func (node *ApocalispType) IfBoolean(callback func(bool)) {
+	if node.Boolean != nil {
+		callback(*node.Boolean)
+	}
 }
 
-func (node *ApocalispType) IsFalse() bool {
-	return node.IsBoolean() && *node.Boolean == false
-}
-
-func (node *ApocalispType) AsBoolean() bool {
-	return *node.Boolean
+func (node *ApocalispType) IsBoolean(value bool) bool {
+	if node.Boolean != nil {
+		return (*node.Boolean) == value
+	}
+	return false
 }
 
 // integer

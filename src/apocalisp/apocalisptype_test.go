@@ -65,29 +65,6 @@ func Test_IsNil_Returns_False_If_Not_Nil(t *testing.T) {
 	}
 }
 
-func Test_IsFalse_Returns_True_If_False_Boolean(t *testing.T) {
-	value := false
-	node := ApocalispType{Boolean: &value}
-	if !node.IsFalse() {
-		t.Error("IsFalse() failed.")
-	}
-}
-
-func Test_IsFalse_Returns_False_If_True_Boolean(t *testing.T) {
-	value := true
-	node := ApocalispType{Boolean: &value}
-	if node.IsFalse() {
-		t.Error("IsFalse() failed.")
-	}
-}
-
-func Test_IsFalse_Returns_False_If_Not_Boolean(t *testing.T) {
-	node := ApocalispType{}
-	if node.IsFalse() {
-		t.Error("IsFalse() failed.")
-	}
-}
-
 func Test_IsString_Returns_True_If_String(t *testing.T) {
 	value := "value"
 	node := ApocalispType{String: &value}
@@ -131,5 +108,58 @@ func Test_IsSymbol_Returns_False_If_String(t *testing.T) {
 	node := ApocalispType{String: &value}
 	if node.IsSymbol() {
 		t.Error("IsSymbol() failed.")
+	}
+}
+
+func Test_IfBoolean_MustInvokeCallback_IfBoolean(t *testing.T) {
+	values := []bool{false, true}
+
+	for _, value := range values {
+		called := false
+		node := ApocalispType{Boolean: &value}
+
+		node.IfBoolean(func(v bool) {
+			called = true
+			if v != value {
+				t.Error("IfBoolean() failed: inconsistent boolean value.")
+			}
+		})
+
+		if called != true {
+			t.Error("IfBoolean() failed: not called.")
+		}
+	}
+}
+
+func Test_IfBoolean_MustNotInvokeCallback_IfNotBoolean(t *testing.T) {
+	called := false
+	node := ApocalispType{}
+
+	node.IfBoolean(func(v bool) {
+		called = true
+	})
+
+	if called != false {
+		t.Error("IfBoolean() failed: called.")
+	}
+}
+
+func Test_IsBoolean_MustReturnTrue_IfBooleanValueIsTheSame(t *testing.T) {
+	values := []bool{false, true}
+
+	for _, value := range values {
+		node := ApocalispType{Boolean: &value}
+
+		if !node.IsBoolean(value) {
+			t.Error("IsBoolean() failed: wrong return value.")
+		}
+	}
+
+}
+
+func Test_IsBoolean_MustReturnFalse_IfNotBoolean(t *testing.T) {
+	node := ApocalispType{}
+	if node.IsBoolean(true) || node.IsBoolean(false) {
+		t.Error("IsBoolean() failed: wrong return value.")
 	}
 }
