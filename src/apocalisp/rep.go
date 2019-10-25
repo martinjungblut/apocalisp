@@ -1,6 +1,7 @@
 package apocalisp
 
 import (
+	"apocalisp/parser"
 	"apocalisp/typing"
 	"errors"
 	"fmt"
@@ -8,7 +9,7 @@ import (
 
 func Rep(sexpr string, environment *Environment, eval func(*typing.Type, *Environment) (*typing.Type, error)) (string, error) {
 	// read
-	t, err := Parse(sexpr)
+	t, err := parser.Parse(sexpr)
 	if err != nil {
 		return "", err
 	} else if t == nil {

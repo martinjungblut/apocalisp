@@ -4,7 +4,7 @@ import (
 	"regexp"
 )
 
-func Tokenize(sexpr string) []string {
+func tokenize(sexpr string) []string {
 	re := regexp.MustCompile(`[\s,]*(~@|[\[\]{}()'` + "`" +
 		`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"` + "`" +
 		`,;)]*)`)

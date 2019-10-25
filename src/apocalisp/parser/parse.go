@@ -1,7 +1,6 @@
-package apocalisp
+package parser
 
 import (
-	"apocalisp/parser"
 	"apocalisp/typing"
 	"fmt"
 	"strconv"
@@ -9,13 +8,13 @@ import (
 )
 
 func Parse(sexpr string) (*typing.Type, error) {
-	tokens := parser.Tokenize(sexpr)
-	reader := parser.NewReader(tokens)
+	tokens := tokenize(sexpr)
+	reader := newReader(tokens)
 	return readForm(reader)
 }
 
-func readForm(reader *parser.Reader) (*typing.Type, error) {
-	token, err := reader.Next()
+func readForm(reader *reader) (*typing.Type, error) {
+	token, err := reader.next()
 	if err != nil {
 		return nil, err
 	} else if token == nil {
@@ -55,7 +54,7 @@ func readForm(reader *parser.Reader) (*typing.Type, error) {
 	return nil, nil
 }
 
-func readSequence(reader *parser.Reader) (*[]typing.Type, error) {
+func readSequence(reader *reader) (*[]typing.Type, error) {
 	sequence := []typing.Type{}
 	for form, err := readForm(reader); form != nil || err != nil; form, err = readForm(reader) {
 		if err != nil {
@@ -94,7 +93,7 @@ func readAtom(token *string) (*typing.Type, error) {
 	return &typing.Type{Symbol: token}, nil
 }
 
-func readList(reader *parser.Reader) (*typing.Type, error) {
+func readList(reader *reader) (*typing.Type, error) {
 	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
@@ -103,7 +102,7 @@ func readList(reader *parser.Reader) (*typing.Type, error) {
 	}
 }
 
-func readVector(reader *parser.Reader) (*typing.Type, error) {
+func readVector(reader *reader) (*typing.Type, error) {
 	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
@@ -112,7 +111,7 @@ func readVector(reader *parser.Reader) (*typing.Type, error) {
 	}
 }
 
-func readHashmap(reader *parser.Reader) (*typing.Type, error) {
+func readHashmap(reader *reader) (*typing.Type, error) {
 	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
@@ -121,7 +120,7 @@ func readHashmap(reader *parser.Reader) (*typing.Type, error) {
 	}
 }
 
-func readPrefixExpansion(reader *parser.Reader, symbol string) (*typing.Type, error) {
+func readPrefixExpansion(reader *reader, symbol string) (*typing.Type, error) {
 	if form, err := readForm(reader); err != nil {
 		return nil, err
 	} else if form != nil {

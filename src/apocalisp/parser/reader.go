@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type Reader struct {
+type reader struct {
 	position int
 	tokens   []string
 
@@ -16,12 +16,12 @@ type Reader struct {
 	readAheadPosition int
 }
 
-func NewReader(tokens []string) *Reader {
-	reader := Reader{tokens: tokens}
+func newReader(tokens []string) *reader {
+	reader := reader{tokens: tokens}
 	return &reader
 }
 
-func (r *Reader) Next() (*string, error) {
+func (r *reader) next() (*string, error) {
 	if err := r.readAhead(); err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (r *Reader) Next() (*string, error) {
 	}
 }
 
-func (r *Reader) readAhead() error {
+func (r *reader) readAhead() error {
 	reachedEnd := func() bool { return r.readAheadPosition == len(r.tokens) }
 	currentToken := func() string { return r.tokens[r.readAheadPosition] }
 	unclosedString := func(token string) bool {

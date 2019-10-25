@@ -7,9 +7,9 @@ import (
 
 func Test_Next_Should_Return_Next_Token(t *testing.T) {
 	tokens := []string{"(", ")"}
-	reader := NewReader(tokens)
+	reader := newReader(tokens)
 
-	token, err := reader.Next()
+	token, err := reader.next()
 	if err != nil {
 		t.Error(err)
 	}
@@ -17,7 +17,7 @@ func Test_Next_Should_Return_Next_Token(t *testing.T) {
 		t.Error("Token should have been `(`.")
 	}
 
-	token, err = reader.Next()
+	token, err = reader.next()
 	if err != nil {
 		t.Error(err)
 	}
@@ -28,9 +28,9 @@ func Test_Next_Should_Return_Next_Token(t *testing.T) {
 
 func Test_Next_Should_Return_Nil_If_There_Are_No_More_Tokens(t *testing.T) {
 	tokens := []string{}
-	reader := NewReader(tokens)
+	reader := newReader(tokens)
 
-	token, err := reader.Next()
+	token, err := reader.next()
 	if err != nil {
 		t.Error(err)
 	}
@@ -58,15 +58,15 @@ func Test_Next_Should_Return_Error_If_Syntax_Is_Invalid(t *testing.T) {
 	}
 
 	for input, output := range mapping {
-		tokens := Tokenize(input)
-		reader := NewReader(tokens)
+		tokens := tokenize(input)
+		reader := newReader(tokens)
 
 		var err error
 		for i := 0; i < len(tokens); i++ {
-			_, err = reader.Next()
+			_, err = reader.next()
 		}
 		if err == nil {
-			t.Error(fmt.Sprintf("Next() should have failed, but didn't. Input: `%s`.", input))
+			t.Error(fmt.Sprintf("next() should have failed, but didn't. Input: `%s`.", input))
 		} else if err.Error() != output {
 			t.Error(fmt.Sprintf("Input `%s` should have yielded error `%s`.", input, output))
 		}
