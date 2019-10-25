@@ -1,11 +1,12 @@
 package apocalisp
 
 import (
+	"apocalisp/typing"
 	"errors"
 	"fmt"
 )
 
-func Rep(sexpr string, environment *Environment, eval func(*ApocalispType, *Environment) (*ApocalispType, error)) (string, error) {
+func Rep(sexpr string, environment *Environment, eval func(*typing.Type, *Environment) (*typing.Type, error)) (string, error) {
 	// read
 	t, err := Parse(sexpr)
 	if err != nil {
@@ -24,11 +25,11 @@ func Rep(sexpr string, environment *Environment, eval func(*ApocalispType, *Envi
 	return evaluated.ToString(), nil
 }
 
-func NoEval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
+func NoEval(node *typing.Type, environment *Environment) (*typing.Type, error) {
 	return node, nil
 }
 
-func Step2Eval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
+func Step2Eval(node *typing.Type, environment *Environment) (*typing.Type, error) {
 	if !node.IsList() {
 		if t, err := evalAst(node, environment, Step2Eval); err != nil {
 			return nil, err
@@ -48,7 +49,7 @@ func Step2Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
-func Step3Eval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
+func Step3Eval(node *typing.Type, environment *Environment) (*typing.Type, error) {
 	if !node.IsList() {
 		if t, err := evalAst(node, environment, Step3Eval); err != nil {
 			return nil, err
@@ -74,7 +75,7 @@ func Step3Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
-func Step4Eval(node *ApocalispType, environment *Environment) (*ApocalispType, error) {
+func Step4Eval(node *typing.Type, environment *Environment) (*typing.Type, error) {
 	if !node.IsList() {
 		if t, err := evalAst(node, environment, Step4Eval); err != nil {
 			return nil, err
@@ -106,8 +107,8 @@ func Step4Eval(node *ApocalispType, environment *Environment) (*ApocalispType, e
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
-func specialFormDef(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
-	return func(rest []ApocalispType) (*ApocalispType, error) {
+func specialFormDef(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
+	return func(rest []typing.Type) (*typing.Type, error) {
 		if len(rest) != 2 || !rest[0].IsSymbol() {
 			return nil, errors.New("Error: Invalid syntax for `def!`.")
 		} else {
@@ -121,12 +122,12 @@ func specialFormDef(eval func(*ApocalispType, *Environment) (*ApocalispType, err
 	}
 }
 
-func specialFormLet(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
-	return func(rest []ApocalispType) (*ApocalispType, error) {
+func specialFormLet(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
+	return func(rest []typing.Type) (*typing.Type, error) {
 		if len(rest) != 2 || !rest[0].EvenIterable() {
 			return nil, errors.New("Error: Invalid syntax for `let*`.")
 		} else {
-			letEnvironment := NewEnvironment(environment, []string{}, []ApocalispType{})
+			letEnvironment := NewEnvironment(environment, []string{}, []typing.Type{})
 
 			bindings := rest[0].Iterable()
 			for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
@@ -143,12 +144,12 @@ func specialFormLet(eval func(*ApocalispType, *Environment) (*ApocalispType, err
 	}
 }
 
-func specialFormDo(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
-	return func(rest []ApocalispType) (*ApocalispType, error) {
+func specialFormDo(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
+	return func(rest []typing.Type) (*typing.Type, error) {
 		if len(rest) < 1 {
 			return nil, errors.New("Error: Invalid syntax for `do`.")
 		} else {
-			toEvaluate := &ApocalispType{List: &rest}
+			toEvaluate := &typing.Type{List: &rest}
 			if evaluated, err := evalAst(toEvaluate, environment, eval); err != nil {
 				return nil, err
 			} else {
@@ -160,8 +161,8 @@ func specialFormDo(eval func(*ApocalispType, *Environment) (*ApocalispType, erro
 	}
 }
 
-func specialFormFn(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
-	return func(rest []ApocalispType) (*ApocalispType, error) {
+func specialFormFn(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
+	return func(rest []typing.Type) (*typing.Type, error) {
 		if len(rest) < 2 || !rest[0].IsList() || !rest[1].IsList() {
 			return nil, errors.New("Error: Invalid syntax for `fn*`.")
 		} else {
@@ -174,23 +175,23 @@ func specialFormFn(eval func(*ApocalispType, *Environment) (*ApocalispType, erro
 				}
 			}
 
-			closure := func(args ...ApocalispType) ApocalispType {
+			closure := func(args ...typing.Type) typing.Type {
 				newEnvironment := NewEnvironment(environment, symbols, args)
 				if result, err := eval(&rest[1], newEnvironment); err != nil {
 					errorMessage := err.Error()
-					return ApocalispType{String: &errorMessage}
+					return typing.Type{String: &errorMessage}
 				} else {
 					return *result
 				}
 			}
 
-			return &ApocalispType{NativeFunction: &closure}, nil
+			return &typing.Type{NativeFunction: &closure}, nil
 		}
 	}
 }
 
-func specialFormIf(eval func(*ApocalispType, *Environment) (*ApocalispType, error), environment *Environment) func([]ApocalispType) (*ApocalispType, error) {
-	return func(rest []ApocalispType) (*ApocalispType, error) {
+func specialFormIf(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
+	return func(rest []typing.Type) (*typing.Type, error) {
 		length := len(rest)
 
 		if length < 2 || length > 3 {
@@ -210,12 +211,12 @@ func specialFormIf(eval func(*ApocalispType, *Environment) (*ApocalispType, erro
 				return evaluated, nil
 			}
 		} else {
-			return NewNil(), nil
+			return typing.NewNil(), nil
 		}
 	}
 }
 
-func evalNativeFunction(node *ApocalispType) (*ApocalispType, error) {
+func evalNativeFunction(node *typing.Type) (*typing.Type, error) {
 	first, rest := node.AsList()[1], node.AsList()[2:]
 
 	if first.IsNativeFunction() {
@@ -226,7 +227,7 @@ func evalNativeFunction(node *ApocalispType) (*ApocalispType, error) {
 	}
 }
 
-func evalAst(node *ApocalispType, environment *Environment, eval func(*ApocalispType, *Environment) (*ApocalispType, error)) (*ApocalispType, error) {
+func evalAst(node *typing.Type, environment *Environment, eval func(*typing.Type, *Environment) (*typing.Type, error)) (*typing.Type, error) {
 	if node.IsSymbol() {
 		if f, err := environment.Get(node.AsSymbol()); err != nil {
 			return nil, err
@@ -236,7 +237,7 @@ func evalAst(node *ApocalispType, environment *Environment, eval func(*Apocalisp
 	}
 
 	if node.IsList() {
-		all := NewList()
+		all := typing.NewList()
 		for _, element := range node.AsList() {
 			if evaluated, err := eval(&element, environment); err == nil {
 				all.AddToList(*evaluated)
@@ -248,7 +249,7 @@ func evalAst(node *ApocalispType, environment *Environment, eval func(*Apocalisp
 	}
 
 	if node.IsVector() {
-		all := NewVector()
+		all := typing.NewVector()
 		for _, element := range node.AsVector() {
 			if evaluated, err := eval(&element, environment); err == nil {
 				all.AddToVector(*evaluated)
@@ -261,7 +262,7 @@ func evalAst(node *ApocalispType, environment *Environment, eval func(*Apocalisp
 
 	if node.IsHashmap() {
 		currentHashmap := node.AsHashmap()
-		newHashmap := NewHashmap()
+		newHashmap := typing.NewHashmap()
 		for i, j := 0, 1; i < len(currentHashmap); i, j = i+2, j+2 {
 			newHashmap.AddToHashmap(currentHashmap[i])
 			if evaluated, err := eval(&(currentHashmap[j]), environment); err != nil {

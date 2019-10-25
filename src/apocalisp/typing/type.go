@@ -1,4 +1,4 @@
-package apocalisp
+package typing
 
 import (
 	"fmt"
@@ -6,20 +6,20 @@ import (
 	"strings"
 )
 
-type ApocalispType struct {
+type Type struct {
 	Nil            bool
 	Boolean        *bool
 	Integer        *int64
 	Symbol         *string
 	String         *string
-	List           *[]ApocalispType
-	Vector         *[]ApocalispType
-	Hashmap        *[]ApocalispType
-	NativeFunction *(func(...ApocalispType) ApocalispType)
+	List           *[]Type
+	Vector         *[]Type
+	Hashmap        *[]Type
+	NativeFunction *(func(...Type) Type)
 }
 
-func (node *ApocalispType) ToString() string {
-	wrapSequence := func(sequence *[]ApocalispType, lWrap string, rWrap string) string {
+func (node *Type) ToString() string {
+	wrapSequence := func(sequence *[]Type, lWrap string, rWrap string) string {
 		tokens := []string{}
 		for _, element := range *sequence {
 			if token := element.ToString(); len(token) > 0 {
@@ -56,22 +56,22 @@ func (node *ApocalispType) ToString() string {
 }
 
 // nil
-func NewNil() *ApocalispType {
-	return &ApocalispType{Nil: true}
+func NewNil() *Type {
+	return &Type{Nil: true}
 }
 
-func (node *ApocalispType) IsNil() bool {
+func (node *Type) IsNil() bool {
 	return node.Nil
 }
 
 // boolean
-func (node *ApocalispType) IfBoolean(callback func(bool)) {
+func (node *Type) IfBoolean(callback func(bool)) {
 	if node.Boolean != nil {
 		callback(*node.Boolean)
 	}
 }
 
-func (node *ApocalispType) IsBoolean(value bool) bool {
+func (node *Type) IsBoolean(value bool) bool {
 	if node.Boolean != nil {
 		return (*node.Boolean) == value
 	}
@@ -79,109 +79,109 @@ func (node *ApocalispType) IsBoolean(value bool) bool {
 }
 
 // integer
-func (node *ApocalispType) IsInteger() bool {
+func (node *Type) IsInteger() bool {
 	return node.Integer != nil
 }
 
-func (node *ApocalispType) AsInteger() int64 {
+func (node *Type) AsInteger() int64 {
 	return *node.Integer
 }
 
 // symbol
-func (node *ApocalispType) IsSymbol() bool {
+func (node *Type) IsSymbol() bool {
 	return node.Symbol != nil
 }
 
-func (node *ApocalispType) AsSymbol() string {
+func (node *Type) AsSymbol() string {
 	return *node.Symbol
 }
 
 // string
-func (node *ApocalispType) IsString() bool {
+func (node *Type) IsString() bool {
 	return node.String != nil
 }
 
-func (node *ApocalispType) AsString() string {
+func (node *Type) AsString() string {
 	return *node.String
 }
 
 // list
-func NewList() *ApocalispType {
-	l := make([]ApocalispType, 1)
-	return &ApocalispType{List: &l}
+func NewList() *Type {
+	l := make([]Type, 1)
+	return &Type{List: &l}
 }
 
-func (node *ApocalispType) AddToList(t ApocalispType) {
+func (node *Type) AddToList(t Type) {
 	*node.List = append(*node.List, t)
 }
 
-func (node *ApocalispType) AsList() []ApocalispType {
+func (node *Type) AsList() []Type {
 	return *node.List
 }
 
-func (node *ApocalispType) IsList() bool {
+func (node *Type) IsList() bool {
 	return node.List != nil
 }
 
-func (node *ApocalispType) IsEmptyList() bool {
+func (node *Type) IsEmptyList() bool {
 	return node.IsList() && (len(*node.List) == 0)
 }
 
 // vector
-func NewVector() *ApocalispType {
-	l := make([]ApocalispType, 1)
-	return &ApocalispType{Vector: &l}
+func NewVector() *Type {
+	l := make([]Type, 1)
+	return &Type{Vector: &l}
 }
 
-func (node *ApocalispType) AddToVector(t ApocalispType) {
+func (node *Type) AddToVector(t Type) {
 	*node.Vector = append(*node.Vector, t)
 }
 
-func (node *ApocalispType) AsVector() []ApocalispType {
+func (node *Type) AsVector() []Type {
 	return *node.Vector
 }
 
-func (node *ApocalispType) IsVector() bool {
+func (node *Type) IsVector() bool {
 	return node.Vector != nil
 }
 
-func (node *ApocalispType) IsEmptyVector() bool {
+func (node *Type) IsEmptyVector() bool {
 	return node.IsVector() && (len(*node.Vector) == 0)
 }
 
 // hashmap
-func NewHashmap() *ApocalispType {
-	l := make([]ApocalispType, 1)
-	return &ApocalispType{Hashmap: &l}
+func NewHashmap() *Type {
+	l := make([]Type, 1)
+	return &Type{Hashmap: &l}
 }
 
-func (node *ApocalispType) AddToHashmap(t ApocalispType) {
+func (node *Type) AddToHashmap(t Type) {
 	*node.Hashmap = append(*node.Hashmap, t)
 }
 
-func (node *ApocalispType) AsHashmap() []ApocalispType {
+func (node *Type) AsHashmap() []Type {
 	return *node.Hashmap
 }
 
-func (node *ApocalispType) IsHashmap() bool {
+func (node *Type) IsHashmap() bool {
 	return node.Hashmap != nil
 }
 
-func (node *ApocalispType) IsEmptyHashmap() bool {
+func (node *Type) IsEmptyHashmap() bool {
 	return node.IsHashmap() && (len(*node.Hashmap) == 0)
 }
 
 // native function
-func (node *ApocalispType) IsNativeFunction() bool {
+func (node *Type) IsNativeFunction() bool {
 	return node.NativeFunction != nil
 }
 
-func (node *ApocalispType) CallNativeFunction(parameters ...ApocalispType) ApocalispType {
+func (node *Type) CallNativeFunction(parameters ...Type) Type {
 	return (*node.NativeFunction)(parameters...)
 }
 
 // TODO: think more about this
-func (node *ApocalispType) EvenIterable() bool {
+func (node *Type) EvenIterable() bool {
 	if node.IsList() {
 		return len(*node.List)%2 == 0 && len(*node.List) > 0
 	}
@@ -193,7 +193,7 @@ func (node *ApocalispType) EvenIterable() bool {
 	return false
 }
 
-func (node *ApocalispType) Iterable() []ApocalispType {
+func (node *Type) Iterable() []Type {
 	if node.IsList() {
 		return *node.List
 	}
@@ -202,5 +202,5 @@ func (node *ApocalispType) Iterable() []ApocalispType {
 		return *node.Vector
 	}
 
-	return make([]ApocalispType, 1)
+	return make([]Type, 1)
 }

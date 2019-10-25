@@ -1,17 +1,18 @@
 package apocalisp
 
 import (
+	"apocalisp/typing"
 	"errors"
 	"fmt"
 )
 
 type Environment struct {
 	outer *Environment
-	table map[string]ApocalispType
+	table map[string]typing.Type
 }
 
-func NewEnvironment(outer *Environment, symbols []string, nodes []ApocalispType) *Environment {
-	table := make(map[string]ApocalispType)
+func NewEnvironment(outer *Environment, symbols []string, nodes []typing.Type) *Environment {
+	table := make(map[string]typing.Type)
 
 	environment := &Environment{
 		table: table,
@@ -27,12 +28,12 @@ func NewEnvironment(outer *Environment, symbols []string, nodes []ApocalispType)
 	return environment
 }
 
-func (env *Environment) Set(symbol string, node ApocalispType) {
+func (env *Environment) Set(symbol string, node typing.Type) {
 	env.table[symbol] = node
 }
 
-func (env *Environment) SetNativeFunction(symbol string, nativeFunction func(...ApocalispType) ApocalispType) {
-	env.table[symbol] = ApocalispType{
+func (env *Environment) SetNativeFunction(symbol string, nativeFunction func(...typing.Type) typing.Type) {
+	env.table[symbol] = typing.Type{
 		NativeFunction: &nativeFunction,
 		Symbol:         &symbol,
 	}
@@ -52,7 +53,7 @@ func (env *Environment) Find(symbol string) *Environment {
 	return nil
 }
 
-func (env *Environment) Get(symbol string) (ApocalispType, error) {
+func (env *Environment) Get(symbol string) (typing.Type, error) {
 	if e := env.Find(symbol); e != nil {
 		for key, value := range e.table {
 			if key == symbol {
@@ -61,44 +62,44 @@ func (env *Environment) Get(symbol string) (ApocalispType, error) {
 		}
 	}
 
-	return ApocalispType{}, errors.New(fmt.Sprintf("Error: '%s' not found.", symbol))
+	return typing.Type{}, errors.New(fmt.Sprintf("Error: '%s' not found.", symbol))
 }
 
 func DefaultEnvironment() *Environment {
-	env := NewEnvironment(nil, []string{}, []ApocalispType{})
+	env := NewEnvironment(nil, []string{}, []typing.Type{})
 
-	env.SetNativeFunction("+", func(inputs ...ApocalispType) ApocalispType {
+	env.SetNativeFunction("+", func(inputs ...typing.Type) typing.Type {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			if input.IsInteger() {
 				r += *input.Integer
 			}
 		}
-		return ApocalispType{Integer: &r}
+		return typing.Type{Integer: &r}
 	})
 
-	env.SetNativeFunction("-", func(inputs ...ApocalispType) ApocalispType {
+	env.SetNativeFunction("-", func(inputs ...typing.Type) typing.Type {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r -= *input.Integer
 		}
-		return ApocalispType{Integer: &r}
+		return typing.Type{Integer: &r}
 	})
 
-	env.SetNativeFunction("/", func(inputs ...ApocalispType) ApocalispType {
+	env.SetNativeFunction("/", func(inputs ...typing.Type) typing.Type {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r /= *input.Integer
 		}
-		return ApocalispType{Integer: &r}
+		return typing.Type{Integer: &r}
 	})
 
-	env.SetNativeFunction("*", func(inputs ...ApocalispType) ApocalispType {
+	env.SetNativeFunction("*", func(inputs ...typing.Type) typing.Type {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r *= *input.Integer
 		}
-		return ApocalispType{Integer: &r}
+		return typing.Type{Integer: &r}
 	})
 
 	return env
