@@ -41,7 +41,7 @@ func Step2Eval(node *typing.Type, environment *Environment) (*typing.Type, error
 		return node, nil
 	} else if node.IsList() {
 		if container, err := evalAst(node, environment, Step2Eval); err == nil {
-			return evalNativeFunction(container)
+			return evalCallable(container)
 		} else {
 			return nil, err
 		}
@@ -67,7 +67,7 @@ func Step3Eval(node *typing.Type, environment *Environment) (*typing.Type, error
 		} else if first.IsSymbol() && first.AsSymbol() == "let*" {
 			return specialFormLet(Step3Eval, environment)(rest)
 		} else if container, err := evalAst(node, environment, Step3Eval); err == nil {
-			return evalNativeFunction(container)
+			return evalCallable(container)
 		} else {
 			return nil, err
 		}
@@ -99,7 +99,7 @@ func Step4Eval(node *typing.Type, environment *Environment) (*typing.Type, error
 		} else if first.IsSymbol() && first.AsSymbol() == "if" {
 			return specialFormIf(Step4Eval, environment)(rest)
 		} else if container, err := evalAst(node, environment, Step4Eval); err == nil {
-			return evalNativeFunction(container)
+			return evalCallable(container)
 		} else {
 			return nil, err
 		}
@@ -186,7 +186,7 @@ func specialFormFn(eval func(*typing.Type, *Environment) (*typing.Type, error), 
 				}
 			}
 
-			return &typing.Type{NativeFunction: &closure}, nil
+			return &typing.Type{Callable: &closure}, nil
 		}
 	}
 }
@@ -217,11 +217,11 @@ func specialFormIf(eval func(*typing.Type, *Environment) (*typing.Type, error), 
 	}
 }
 
-func evalNativeFunction(node *typing.Type) (*typing.Type, error) {
+func evalCallable(node *typing.Type) (*typing.Type, error) {
 	first, rest := node.AsList()[1], node.AsList()[2:]
 
-	if first.IsNativeFunction() {
-		result := first.CallNativeFunction(rest...)
+	if first.IsCallable() {
+		result := first.Call(rest...)
 		return &result, nil
 	} else {
 		return nil, errors.New(fmt.Sprintf("Error: '%s' is not a function.", first.ToString()))

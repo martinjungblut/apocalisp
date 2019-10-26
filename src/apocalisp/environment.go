@@ -32,10 +32,10 @@ func (env *Environment) Set(symbol string, node typing.Type) {
 	env.table[symbol] = node
 }
 
-func (env *Environment) SetNativeFunction(symbol string, nativeFunction func(...typing.Type) typing.Type) {
+func (env *Environment) SetCallable(symbol string, callable func(...typing.Type) typing.Type) {
 	env.table[symbol] = typing.Type{
-		NativeFunction: &nativeFunction,
-		Symbol:         &symbol,
+		Callable: &callable,
+		Symbol:   &symbol,
 	}
 }
 
@@ -68,7 +68,7 @@ func (env *Environment) Get(symbol string) (typing.Type, error) {
 func DefaultEnvironment() *Environment {
 	env := NewEnvironment(nil, []string{}, []typing.Type{})
 
-	env.SetNativeFunction("+", func(inputs ...typing.Type) typing.Type {
+	env.SetCallable("+", func(inputs ...typing.Type) typing.Type {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			if input.IsInteger() {
@@ -78,7 +78,7 @@ func DefaultEnvironment() *Environment {
 		return typing.Type{Integer: &r}
 	})
 
-	env.SetNativeFunction("-", func(inputs ...typing.Type) typing.Type {
+	env.SetCallable("-", func(inputs ...typing.Type) typing.Type {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r -= *input.Integer
@@ -86,7 +86,7 @@ func DefaultEnvironment() *Environment {
 		return typing.Type{Integer: &r}
 	})
 
-	env.SetNativeFunction("/", func(inputs ...typing.Type) typing.Type {
+	env.SetCallable("/", func(inputs ...typing.Type) typing.Type {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r /= *input.Integer
@@ -94,7 +94,7 @@ func DefaultEnvironment() *Environment {
 		return typing.Type{Integer: &r}
 	})
 
-	env.SetNativeFunction("*", func(inputs ...typing.Type) typing.Type {
+	env.SetCallable("*", func(inputs ...typing.Type) typing.Type {
 		r := *inputs[0].Integer
 		for _, input := range inputs[1:] {
 			r *= *input.Integer

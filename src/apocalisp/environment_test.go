@@ -130,16 +130,16 @@ func Test_Find_Should_Return_Nil_If_No_Environment_Contains_Binding(t *testing.T
 	}
 }
 
-func Test_SetNativeFunction_Should_Add_Native_Function_Binding_To_Environment(t *testing.T) {
+func Test_SetCallable_Should_Add_Native_Function_Binding_To_Environment(t *testing.T) {
 	environment := NewEnvironment(nil, []string{}, []typing.Type{})
 
-	environment.SetNativeFunction("print", func(...typing.Type) typing.Type {
+	environment.SetCallable("print", func(...typing.Type) typing.Type {
 		return typing.Type{}
 	})
 
 	if fetched, err := environment.Get("print"); err != nil {
 		t.Error("Get() should not have returned error.")
-	} else if fetched.NativeFunction == nil || fetched.Symbol == nil {
-		t.Error("SetNativeFunction() failed.")
+	} else if fetched.Callable == nil || fetched.Symbol == nil {
+		t.Error("SetCallable() failed.")
 	}
 }
