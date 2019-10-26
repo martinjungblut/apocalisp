@@ -102,5 +102,17 @@ func DefaultEnvironment() *Environment {
 		return typing.Type{Integer: &r}
 	})
 
+	env.SetCallable("list", func(args ...typing.Type) typing.Type {
+		list := typing.NewList()
+		for _, arg := range args {
+			list.AddToList(arg)
+		}
+		return *list
+	})
+
+	env.SetCallable("list?", func(args ...typing.Type) typing.Type {
+		return *typing.NewBoolean(args[0].IsList())
+	})
+
 	return env
 }

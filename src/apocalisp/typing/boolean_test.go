@@ -47,12 +47,23 @@ func Test_IsBoolean_Must_Return_True_If_Boolean_Value_Equals(t *testing.T) {
 			t.Error("IsBoolean() failed: wrong return value.")
 		}
 	}
-
 }
 
 func Test_IsBoolean_Must_Return_False_If_Not_Boolean(t *testing.T) {
 	node := Type{}
 	if node.IsBoolean(true) || node.IsBoolean(false) {
 		t.Error("IsBoolean() failed: wrong return value.")
+	}
+}
+
+func Test_NewBoolean_Creates_Boolean(t *testing.T) {
+	values := []bool{false, true}
+
+	for _, value := range values {
+		node := NewBoolean(value)
+
+		if !node.IsBoolean(value) {
+			t.Error("NewBoolean() failed.")
+		}
 	}
 }
