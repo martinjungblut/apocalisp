@@ -114,5 +114,33 @@ func DefaultEnvironment() *Environment {
 		return *typing.NewBoolean(args[0].IsList())
 	})
 
+	env.SetCallable("empty?", func(args ...typing.Type) typing.Type {
+		if args[0].IsList() {
+			return *typing.NewBoolean(len(args[0].AsList()) == 0)
+		}
+
+		return *typing.NewBoolean(false)
+	})
+
+	env.SetCallable("count", func(args ...typing.Type) typing.Type {
+		var value int64 = 0
+		if args[0].IsList() {
+			value = int64(len(args[0].AsList()))
+		}
+
+		return typing.Type{Integer: &value}
+	})
+
+	env.SetCallable("=", func(args ...typing.Type) typing.Type {
+		if len(args) == 2 {
+			if args[0].IsInteger() && args[1].IsInteger() {
+				value := args[0].AsInteger() == args[1].AsInteger()
+				return *typing.NewBoolean(value)
+			}
+		}
+
+		return *typing.NewBoolean(true)
+	})
+
 	return env
 }
