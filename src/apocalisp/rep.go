@@ -218,7 +218,7 @@ func specialFormIf(eval func(*typing.Type, *Environment) (*typing.Type, error), 
 }
 
 func evalCallable(node *typing.Type) (*typing.Type, error) {
-	first, rest := node.AsList()[1], node.AsList()[2:]
+	first, rest := node.AsList()[0], node.AsList()[1:]
 
 	if first.IsCallable() {
 		result := first.Call(rest...)

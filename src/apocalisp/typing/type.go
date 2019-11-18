@@ -76,5 +76,5 @@ func (node *Type) Iterable() []Type {
 		return *node.Vector
 	}
 
-	return make([]Type, 1)
+	return make([]Type, 0)
 }

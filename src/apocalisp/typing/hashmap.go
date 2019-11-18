@@ -1,7 +1,7 @@
 package typing
 
 func NewHashmap() *Type {
-	l := make([]Type, 1)
+	l := make([]Type, 0)
 	return &Type{Hashmap: &l}
 }
 

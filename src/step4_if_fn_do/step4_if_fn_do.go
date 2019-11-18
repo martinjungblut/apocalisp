@@ -35,8 +35,11 @@ func main() {
 
 	environment := apocalisp.DefaultEnvironment()
 
+	_, _ = apocalisp.Rep("(def! not (fn* (a) (if a false true)))", environment, apocalisp.Step4Eval)
+
 	// repl
 	fmt.Print("This is apocaLISP.\n")
+
 	for {
 		if sexpr, err := line.Prompt("user> "); err == nil {
 			line.AppendHistory(sexpr)
