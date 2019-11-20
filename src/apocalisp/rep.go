@@ -23,7 +23,7 @@ func Rep(sexpr string, environment *Environment, eval func(*typing.Type, *Enviro
 	}
 
 	// print
-	return evaluated.ToString(), nil
+	return evaluated.ToString(true), nil
 }
 
 func NoEval(node *typing.Type, environment *Environment) (*typing.Type, error) {
@@ -132,7 +132,7 @@ func specialFormLet(eval func(*typing.Type, *Environment) (*typing.Type, error),
 
 			bindings := rest[0].Iterable()
 			for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
-				s := bindings[i].ToString()
+				s := bindings[i].ToString(true)
 				if e, ierr := eval(&bindings[j], letEnvironment); ierr == nil {
 					letEnvironment.Set(s, *e)
 				} else {
@@ -224,7 +224,7 @@ func evalCallable(node *typing.Type) (*typing.Type, error) {
 		result := first.Call(rest...)
 		return &result, nil
 	} else {
-		return nil, errors.New(fmt.Sprintf("Error: '%s' is not a function.", first.ToString()))
+		return nil, errors.New(fmt.Sprintf("Error: '%s' is not a function.", first.ToString(true)))
 	}
 }
 

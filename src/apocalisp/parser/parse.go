@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"apocalisp/escaping"
 	"apocalisp/typing"
 	"fmt"
 	"strconv"
@@ -87,7 +88,8 @@ func readAtom(token *string) (*typing.Type, error) {
 	}
 
 	if strings.HasPrefix(*token, "\"") && strings.HasSuffix(*token, "\"") {
-		return &typing.Type{String: token}, nil
+		unescapedToken := escaping.UnescapeString(*token)
+		return &typing.Type{String: &unescapedToken}, nil
 	}
 
 	return &typing.Type{Symbol: token}, nil

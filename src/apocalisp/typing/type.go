@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"apocalisp/escaping"
 	"fmt"
 	"strconv"
 	"strings"
@@ -18,15 +19,23 @@ type Type struct {
 	Callable *(func(...Type) Type)
 }
 
-func (node *Type) ToString() string {
+func (node *Type) ToString(readably bool) string {
 	wrapSequence := func(sequence *[]Type, lWrap string, rWrap string) string {
 		tokens := []string{}
 		for _, element := range *sequence {
-			if token := element.ToString(); len(token) > 0 {
+			if token := element.ToString(readably); len(token) > 0 {
 				tokens = append(tokens, token)
 			}
 		}
 		return fmt.Sprintf("%s%s%s", lWrap, strings.Join(tokens, " "), rWrap)
+	}
+
+	escapeString := func(input string) string {
+		if readably {
+			return escaping.EscapeString(input)
+		} else {
+			return input
+		}
 	}
 
 	repr := ""
@@ -43,7 +52,7 @@ func (node *Type) ToString() string {
 		} else if node.IsSymbol() {
 			repr = node.AsSymbol()
 		} else if node.IsString() {
-			repr = node.AsString()
+			repr = escapeString(node.AsString())
 		} else if node.IsList() {
 			repr = wrapSequence(node.List, "(", ")")
 		} else if node.IsVector() {
