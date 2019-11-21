@@ -4,6 +4,7 @@ import (
 	"apocalisp/typing"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type Environment struct {
@@ -169,10 +170,8 @@ func DefaultEnvironment() *Environment {
 		}
 
 		if len(args) == 2 {
-			if args[0].IsList() && args[1].IsList() {
-				return *typing.NewBoolean(compareLists(args[0].AsList(), args[1].AsList(), compareElements))
-			} else if args[0].IsVector() && args[1].IsVector() {
-				return *typing.NewBoolean(compareLists(args[0].AsVector(), args[1].AsVector(), compareElements))
+			if (args[0].IsList() || args[0].IsVector()) && (args[1].IsList() || args[1].IsVector()) {
+				return *typing.NewBoolean(compareLists(args[0].Iterable(), args[1].Iterable(), compareElements))
 			} else {
 				return *typing.NewBoolean(compareElements(args[0], args[1]))
 			}
@@ -219,6 +218,42 @@ func DefaultEnvironment() *Environment {
 			}
 		}
 		return *typing.NewBoolean(result)
+	})
+
+	env.SetCallable("pr-str", func(args ...typing.Type) typing.Type {
+		parts := make([]string, 0)
+		for _, arg := range args {
+			parts = append(parts, arg.ToString(true))
+		}
+		concatenated := fmt.Sprintf("\"%s\"", strings.Join(parts, " "))
+		return typing.Type{String: &concatenated}
+	})
+
+	env.SetCallable("str", func(args ...typing.Type) typing.Type {
+		parts := make([]string, 0)
+		for _, arg := range args {
+			parts = append(parts, arg.ToString(false))
+		}
+		concatenated := fmt.Sprintf("\"%s\"", strings.Join(parts, ""))
+		return typing.Type{String: &concatenated}
+	})
+
+	env.SetCallable("prn", func(args ...typing.Type) typing.Type {
+		parts := make([]string, 0)
+		for _, arg := range args {
+			parts = append(parts, arg.ToString(true))
+		}
+		fmt.Println(strings.Join(parts, " "))
+		return *typing.NewNil()
+	})
+
+	env.SetCallable("println", func(args ...typing.Type) typing.Type {
+		parts := make([]string, 0)
+		for _, arg := range args {
+			parts = append(parts, arg.ToString(false))
+		}
+		fmt.Println(strings.Join(parts, " "))
+		return *typing.NewNil()
 	})
 
 	return env

@@ -164,11 +164,11 @@ func specialFormDo(eval func(*typing.Type, *Environment) (*typing.Type, error), 
 
 func specialFormFn(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
 	return func(rest []typing.Type) (*typing.Type, error) {
-		if len(rest) < 2 || !rest[0].IsList() || !rest[1].IsList() {
+		if len(rest) < 2 || (rest[0].IsList() && rest[0].IsVector()) {
 			return nil, errors.New("Error: Invalid syntax for `fn*`.")
 		} else {
 			var symbols []string
-			for _, node := range rest[0].AsList() {
+			for _, node := range rest[0].Iterable() {
 				if node.IsSymbol() {
 					symbols = append(symbols, node.AsSymbol())
 				} else {
