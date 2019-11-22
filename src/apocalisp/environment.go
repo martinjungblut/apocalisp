@@ -126,55 +126,8 @@ func DefaultEnvironment() *Environment {
 	})
 
 	env.SetCallable("=", func(args ...typing.Type) typing.Type {
-		compareLists := func(firstList []typing.Type, secondList []typing.Type, compareElements func(first typing.Type, second typing.Type) bool) bool {
-			if len(firstList) != len(secondList) {
-				return false
-			}
-
-			if len(firstList) == 0 {
-				return true
-			}
-
-			result := true
-			for index, _ := range firstList {
-				if !compareElements(firstList[index], secondList[index]) {
-					result = false
-					break
-				}
-			}
-			return result
-		}
-
-		compareElements := func(first typing.Type, second typing.Type) bool {
-			result := false
-
-			if first.IsNil() && second.IsNil() {
-				result = true
-			}
-
-			first.IfBoolean(func(a bool) {
-				second.IfBoolean(func(b bool) {
-					result = a == b
-				})
-			})
-
-			if first.IsInteger() && second.IsInteger() {
-				result = first.AsInteger() == second.AsInteger()
-			}
-
-			if first.IsString() && second.IsString() {
-				result = first.AsString() == second.AsString()
-			}
-
-			return result
-		}
-
 		if len(args) == 2 {
-			if (args[0].IsList() || args[0].IsVector()) && (args[1].IsList() || args[1].IsVector()) {
-				return *typing.NewBoolean(compareLists(args[0].Iterable(), args[1].Iterable(), compareElements))
-			} else {
-				return *typing.NewBoolean(compareElements(args[0], args[1]))
-			}
+			return *typing.NewBoolean(compareElements(args[0], args[1]))
 		}
 
 		return *typing.NewBoolean(false)
@@ -257,4 +210,51 @@ func DefaultEnvironment() *Environment {
 	})
 
 	return env
+}
+
+func compareLists(firstList []typing.Type, secondList []typing.Type, compareElements func(first typing.Type, second typing.Type) bool) bool {
+	if len(firstList) != len(secondList) {
+		return false
+	}
+
+	if len(firstList) == 0 {
+		return true
+	}
+
+	result := true
+	for index, _ := range firstList {
+		if !compareElements(firstList[index], secondList[index]) {
+			result = false
+			break
+		}
+	}
+	return result
+}
+
+func compareElements(first typing.Type, second typing.Type) bool {
+	if (first.IsList() || first.IsVector()) && (second.IsList() || second.IsVector()) {
+		return compareLists(first.Iterable(), second.Iterable(), compareElements)
+	}
+
+	result := false
+
+	if first.IsNil() && second.IsNil() {
+		result = true
+	}
+
+	first.IfBoolean(func(a bool) {
+		second.IfBoolean(func(b bool) {
+			result = a == b
+		})
+	})
+
+	if first.IsInteger() && second.IsInteger() {
+		result = first.AsInteger() == second.AsInteger()
+	}
+
+	if first.IsString() && second.IsString() {
+		result = first.AsString() == second.AsString()
+	}
+
+	return result
 }
