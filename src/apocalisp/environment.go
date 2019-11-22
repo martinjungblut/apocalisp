@@ -62,7 +62,6 @@ func (env *Environment) Get(symbol string) (typing.Type, error) {
 			}
 		}
 	}
-
 	return typing.Type{}, errors.New(fmt.Sprintf("Error: '%s' not found.", symbol))
 }
 
@@ -127,9 +126,8 @@ func DefaultEnvironment() *Environment {
 
 	env.SetCallable("=", func(args ...typing.Type) typing.Type {
 		if len(args) == 2 {
-			return *typing.NewBoolean(compareElements(args[0], args[1]))
+			return *typing.NewBoolean(compareNodes(args[0], args[1]))
 		}
-
 		return *typing.NewBoolean(false)
 	})
 
@@ -212,18 +210,16 @@ func DefaultEnvironment() *Environment {
 	return env
 }
 
-func compareLists(firstList []typing.Type, secondList []typing.Type, compareElements func(first typing.Type, second typing.Type) bool) bool {
+func compareIterables(firstList []typing.Type, secondList []typing.Type) bool {
 	if len(firstList) != len(secondList) {
 		return false
-	}
-
-	if len(firstList) == 0 {
+	} else if len(firstList) == 0 {
 		return true
 	}
 
 	result := true
 	for index, _ := range firstList {
-		if !compareElements(firstList[index], secondList[index]) {
+		if !compareNodes(firstList[index], secondList[index]) {
 			result = false
 			break
 		}
@@ -231,9 +227,9 @@ func compareLists(firstList []typing.Type, secondList []typing.Type, compareElem
 	return result
 }
 
-func compareElements(first typing.Type, second typing.Type) bool {
+func compareNodes(first typing.Type, second typing.Type) bool {
 	if (first.IsList() || first.IsVector()) && (second.IsList() || second.IsVector()) {
-		return compareLists(first.Iterable(), second.Iterable(), compareElements)
+		return compareIterables(first.Iterable(), second.Iterable())
 	}
 
 	result := false
