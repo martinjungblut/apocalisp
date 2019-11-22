@@ -225,7 +225,7 @@ func DefaultEnvironment() *Environment {
 		for _, arg := range args {
 			parts = append(parts, arg.ToString(true))
 		}
-		concatenated := fmt.Sprintf("\"%s\"", strings.Join(parts, " "))
+		concatenated := strings.Join(parts, " ")
 		return typing.Type{String: &concatenated}
 	})
 
@@ -234,7 +234,7 @@ func DefaultEnvironment() *Environment {
 		for _, arg := range args {
 			parts = append(parts, arg.ToString(false))
 		}
-		concatenated := fmt.Sprintf("\"%s\"", strings.Join(parts, ""))
+		concatenated := strings.Join(parts, "")
 		return typing.Type{String: &concatenated}
 	})
 

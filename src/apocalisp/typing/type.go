@@ -30,9 +30,9 @@ func (node *Type) ToString(readably bool) string {
 		return fmt.Sprintf("%s%s%s", lWrap, strings.Join(tokens, " "), rWrap)
 	}
 
-	escapeString := func(input string) string {
+	formatString := func(input string) string {
 		if readably {
-			return escaping.EscapeString(input)
+			return fmt.Sprintf("\"%s\"", escaping.EscapeString(input))
 		} else {
 			return input
 		}
@@ -52,7 +52,7 @@ func (node *Type) ToString(readably bool) string {
 		} else if node.IsSymbol() {
 			repr = node.AsSymbol()
 		} else if node.IsString() {
-			repr = escapeString(node.AsString())
+			repr = formatString(node.AsString())
 		} else if node.IsList() {
 			repr = wrapSequence(node.List, "(", ")")
 		} else if node.IsVector() {
