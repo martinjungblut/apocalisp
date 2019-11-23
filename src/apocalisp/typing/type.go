@@ -20,7 +20,7 @@ type Type struct {
 }
 
 func (node *Type) ToString(readably bool) string {
-	wrapSequence := func(sequence *[]Type, lWrap string, rWrap string) string {
+	formatSequence := func(sequence *[]Type, lWrap string, rWrap string) string {
 		tokens := []string{}
 		for _, element := range *sequence {
 			if token := element.ToString(readably); len(token) > 0 {
@@ -53,36 +53,12 @@ func (node *Type) ToString(readably bool) string {
 		} else if node.IsString() {
 			repr = formatString(node.AsString())
 		} else if node.IsList() {
-			repr = wrapSequence(node.List, "(", ")")
+			repr = formatSequence(node.List, "(", ")")
 		} else if node.IsVector() {
-			repr = wrapSequence(node.Vector, "[", "]")
+			repr = formatSequence(node.Vector, "[", "]")
 		} else if node.IsHashmap() {
-			repr = wrapSequence(node.Hashmap, "{", "}")
+			repr = formatSequence(node.Hashmap, "{", "}")
 		}
 	}
 	return repr
-}
-
-func (node *Type) EvenIterable() bool {
-	if node.IsList() {
-		return len(*node.List)%2 == 0 && len(*node.List) > 0
-	}
-
-	if node.IsVector() {
-		return len(*node.Vector)%2 == 0 && len(*node.Vector) > 0
-	}
-
-	return false
-}
-
-func (node *Type) Iterable() []Type {
-	if node.IsList() {
-		return *node.List
-	}
-
-	if node.IsVector() {
-		return *node.Vector
-	}
-
-	return make([]Type, 0)
 }
