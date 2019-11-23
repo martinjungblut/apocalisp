@@ -33,9 +33,8 @@ func (node *Type) ToString(readably bool) string {
 	formatString := func(input string) string {
 		if readably {
 			return fmt.Sprintf("\"%s\"", escaping.EscapeString(input))
-		} else {
-			return input
 		}
+		return input
 	}
 
 	repr := ""

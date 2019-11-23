@@ -9,10 +9,10 @@ func EscapeString(input string) string {
 		return input
 	}
 
-	output := strings.ReplaceAll(input, "\\\"", "\"")
+	output := input
+	output = strings.ReplaceAll(output, "\\", "\\\\")
 	output = strings.ReplaceAll(output, "\n", "\\n")
-	output = strings.ReplaceAll(output, "\\\\", "\\")
-
+	output = strings.ReplaceAll(output, "\"", "\\\"")
 	return output
 }
 
@@ -21,8 +21,9 @@ func UnescapeString(input string) string {
 		return input
 	}
 
-	output := strings.ReplaceAll(input, "\\", "\\\\")
-	output = strings.ReplaceAll(output, "\"", "\\\"")
-
+	output := input
+	output = strings.ReplaceAll(output, "\\\"", "\"")
+	output = strings.ReplaceAll(output, "\\n", "\n")
+	output = strings.ReplaceAll(output, "\\\\", "\\")
 	return output
 }
