@@ -59,6 +59,90 @@ func Test_NewEnvironment_Should_Add_Bindings_To_Environment_More_Nodes_Than_Symb
 	}
 }
 
+func Test_NewEnvironment_Should_Support_Variadic_Parameters(t *testing.T) {
+	firstValue := "firstValue"
+	secondValue := "secondValue"
+	firstNode := typing.Type{String: &firstValue}
+	secondNode := typing.Type{String: &secondValue}
+
+	environment := NewEnvironment(nil, []string{"&", "other"}, []typing.Type{firstNode, secondNode})
+
+	if node, err := environment.Get("other"); err == nil {
+		if !node.IsList() {
+			t.Error("Symbol should have been set as a list.")
+		}
+
+		l := node.AsList()
+		if len(l) != 2 {
+			t.Error("Incorrect list length.")
+		}
+
+		if node.AsList()[0].AsString() != firstValue {
+			t.Error("Value mismatch.")
+		}
+
+		if node.AsList()[1].AsString() != secondValue {
+			t.Error("Value mismatch.")
+		}
+	} else {
+		t.Error("Symbol not set when calling NewEnvironment().")
+	}
+}
+
+func Test_NewEnvironment_Should_Support_Variadic_Parameters_Falling_Back_To_A_Safe_Symbol_If_None_Is_Provided(t *testing.T) {
+	firstValue := "firstValue"
+	secondValue := "secondValue"
+	firstNode := typing.Type{String: &firstValue}
+	secondNode := typing.Type{String: &secondValue}
+
+	environment := NewEnvironment(nil, []string{"a", "&"}, []typing.Type{firstNode, secondNode})
+
+	if node, err := environment.Get("&"); err == nil {
+		if !node.IsList() {
+			t.Error("Symbol should have been set as a list.")
+		}
+
+		l := node.AsList()
+		if len(l) != 1 {
+			t.Error("Incorrect list length.")
+		}
+
+		if node.AsList()[0].AsString() != secondValue {
+			t.Error("Value mismatch.")
+		}
+	} else {
+		t.Error("Symbol not set when calling NewEnvironment().")
+	}
+}
+
+func Test_NewEnvironment_Should_Set_Symbol_As_Empty_List_If_No_Variadic_Arguments_Are_Provided(t *testing.T) {
+	environment := NewEnvironment(nil, []string{"&", "other"}, []typing.Type{})
+	if node, err := environment.Get("other"); err == nil {
+		if !node.IsList() {
+			t.Error("Symbol should have been set as a list.")
+		}
+
+		if len(node.AsList()) != 0 {
+			t.Error("Incorrect list length.")
+		}
+	} else {
+		t.Error("Symbol not set when calling NewEnvironment().")
+	}
+
+	environment = NewEnvironment(nil, []string{"&"}, []typing.Type{})
+	if node, err := environment.Get("&"); err == nil {
+		if !node.IsList() {
+			t.Error("Symbol should have been set as a list.")
+		}
+
+		if len(node.AsList()) != 0 {
+			t.Error("Incorrect list length.")
+		}
+	} else {
+		t.Error("Symbol not set when calling NewEnvironment().")
+	}
+}
+
 func Test_Set_Should_Add_Binding_To_Environment(t *testing.T) {
 	environment := NewEnvironment(nil, []string{}, []typing.Type{})
 

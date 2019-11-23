@@ -21,8 +21,18 @@ func NewEnvironment(outer *Environment, symbols []string, nodes []typing.Type) *
 	}
 
 	for i := 0; i < len(symbols); i++ {
-		if i < len(nodes) {
-			environment.Set(symbols[i], nodes[i])
+		if symbols[i] == "&" {
+			rest := nodes[i:]
+			if i+1 < len(symbols) {
+				environment.Set(symbols[i+1], typing.Type{List: &rest})
+			} else {
+				environment.Set("&", typing.Type{List: &rest})
+			}
+			break
+		} else {
+			if i < len(nodes) {
+				environment.Set(symbols[i], nodes[i])
+			}
 		}
 	}
 
