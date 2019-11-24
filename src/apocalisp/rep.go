@@ -5,6 +5,7 @@ import (
 	"apocalisp/typing"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 func Rep(sexpr string, environment *Environment, eval func(*typing.Type, *Environment) (*typing.Type, error)) (string, error) {
@@ -229,7 +230,7 @@ func evalCallable(node *typing.Type) (*typing.Type, error) {
 }
 
 func evalAst(node *typing.Type, environment *Environment, eval func(*typing.Type, *Environment) (*typing.Type, error)) (*typing.Type, error) {
-	if node.IsSymbol() {
+	if node.IsSymbol() && !strings.HasPrefix(node.AsSymbol(), ":") {
 		if f, err := environment.Get(node.AsSymbol()); err != nil {
 			return nil, err
 		} else {

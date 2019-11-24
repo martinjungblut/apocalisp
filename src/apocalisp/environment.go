@@ -262,5 +262,9 @@ func compareNodes(first typing.Type, second typing.Type) bool {
 		result = first.AsString() == second.AsString()
 	}
 
+	if first.IsSymbol() && second.IsSymbol() {
+		result = first.AsSymbol() == second.AsSymbol()
+	}
+
 	return result
 }

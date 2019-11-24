@@ -19,6 +19,8 @@ func Test_EscapeString_UnescapeString(t *testing.T) {
 		// backslashes
 		"\\\\":        "\\",
 		" \\\\ \\\\ ": " \\ \\ ",
+		// blackslashes + newlines
+		"\\\\n": "\\n",
 	}
 
 	for a, b := range mapping {
@@ -32,6 +34,16 @@ func Test_EscapeString_UnescapeString(t *testing.T) {
 		output = EscapeString(b)
 		if output != a {
 			t.Errorf("escapeString() failed. Input: `%s`. Expected output: `%s`. Actual output: `%s`.", b, a, output)
+		}
+
+		output = UnescapeString(EscapeString(b))
+		if output != b {
+			t.Errorf("Conversion failed. Expected output: `%s`. Actual output: `%s`.", b, output)
+		}
+
+		output = EscapeString(UnescapeString(a))
+		if output != a {
+			t.Errorf("Conversion failed. Expected output: `%s`. Actual output: `%s`.", a, output)
 		}
 	}
 }
