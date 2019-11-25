@@ -11,16 +11,16 @@ func Test_EscapeString_UnescapeString(t *testing.T) {
 		" ":   " ",
 		"   ": "   ",
 		// doublequotes
-		"\\\"":      "\"",
-		"\\\" \\\"": "\" \"",
+		`\"`:    "\"",
+		`\" \"`: "\" \"",
 		// newlines
-		"\\n":     "\n",
-		"\\n \\n": "\n \n",
+		`\n`:    "\n",
+		`\n \n`: "\n \n",
 		// backslashes
-		"\\\\":        "\\",
-		" \\\\ \\\\ ": " \\ \\ ",
+		`\\`:      "\\",
+		` \\ \\ `: " \\ \\ ",
 		// blackslashes + newlines
-		"\\\\n": "\\n",
+		`\\n`: "\\n",
 	}
 
 	for a, b := range mapping {
