@@ -84,8 +84,11 @@ func readAtom(token *string) (*typing.Type, error) {
 	}
 
 	if strings.HasPrefix(*token, "\"") && strings.HasSuffix(*token, "\"") {
-		t := escaping.UnescapeString(strings.TrimPrefix(strings.TrimSuffix(*token, "\""), "\""))
-		return &typing.Type{String: &t}, nil
+		if t, err := escaping.UnescapeString(strings.TrimPrefix(strings.TrimSuffix(*token, "\""), "\"")); err != nil {
+			return nil, err
+		} else {
+			return &typing.Type{String: &t}, nil
+		}
 	}
 
 	return &typing.Type{Symbol: token}, nil

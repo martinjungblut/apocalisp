@@ -24,9 +24,14 @@ func Test_EscapeString_UnescapeString(t *testing.T) {
 	}
 
 	for a, b := range mapping {
+		var intermediary string
 		var output string
+		var err error
 
-		output = UnescapeString(a)
+		output, err = UnescapeString(a)
+		if err != nil {
+			t.Error(err)
+		}
 		if output != b {
 			t.Errorf("unescapeString() failed. Input: `%s`. Expected output: `%s`. Actual output: `%s`.", a, b, output)
 		}
@@ -36,14 +41,33 @@ func Test_EscapeString_UnescapeString(t *testing.T) {
 			t.Errorf("escapeString() failed. Input: `%s`. Expected output: `%s`. Actual output: `%s`.", b, a, output)
 		}
 
-		output = UnescapeString(EscapeString(b))
+		output, err = UnescapeString(EscapeString(b))
+		if err != nil {
+			t.Error(err)
+		}
 		if output != b {
 			t.Errorf("Conversion failed. Expected output: `%s`. Actual output: `%s`.", b, output)
 		}
 
-		output = EscapeString(UnescapeString(a))
+		intermediary, err = UnescapeString(a)
+		if err != nil {
+			t.Error(err)
+		}
+		output = EscapeString(intermediary)
 		if output != a {
 			t.Errorf("Conversion failed. Expected output: `%s`. Actual output: `%s`.", a, output)
+		}
+	}
+}
+
+func Test_UnescapeString(t *testing.T) {
+	shouldFail := []string{`\`, `\\\`}
+
+	for _, s := range shouldFail {
+		_, err := UnescapeString(s)
+
+		if err == nil {
+			t.Error("Should have failed.")
 		}
 	}
 }
