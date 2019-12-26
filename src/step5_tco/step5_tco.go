@@ -36,7 +36,7 @@ func main() {
 
 	environment := apocalisp.DefaultEnvironment()
 
-	_, _ = apocalisp.Rep("(def! not (fn* (a) (if a false true)))", environment, apocalisp.Step4Eval)
+	_, _ = apocalisp.Rep("(def! not (fn* (a) (if a false true)))", environment, apocalisp.Step5Eval)
 
 	// decrease max stack size to make TCO-related tests useful
 	debug.SetMaxStack(1 * 1024 * 1024)
@@ -48,7 +48,7 @@ func main() {
 		if sexpr, err := line.Prompt("user> "); err == nil {
 			line.AppendHistory(sexpr)
 
-			output, err := apocalisp.Rep(sexpr, environment, apocalisp.Step4Eval)
+			output, err := apocalisp.Rep(sexpr, environment, apocalisp.Step5Eval)
 			if err == nil {
 				if len(output) > 0 {
 					fmt.Printf("%s\n", output)

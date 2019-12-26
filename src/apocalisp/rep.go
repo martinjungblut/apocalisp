@@ -109,6 +109,48 @@ func Step4Eval(node *typing.Type, environment *Environment) (*typing.Type, error
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
+func Step5Eval(node *typing.Type, environment *Environment) (*typing.Type, error) {
+	for {
+		if !node.IsList() {
+			if t, err := evalAst(node, environment, Step5Eval); err != nil {
+				return nil, err
+			} else {
+				return t, nil
+			}
+		} else if node.IsEmptyList() {
+			return node, nil
+		} else if node.IsList() {
+			first, rest := node.AsList()[0], node.AsList()[1:]
+
+			if first.IsSymbol() && first.AsSymbol() == "def!" {
+				return specialFormDef(Step5Eval, environment)(rest)
+			} else if first.IsSymbol() && first.AsSymbol() == "let*" {
+				if err := tcoSpecialFormLet(Step5Eval, &node, &environment)(rest); err != nil {
+					return nil, err
+				}
+			} else if first.IsSymbol() && first.AsSymbol() == "do" {
+				if err := tcoSpecialFormDo(Step5Eval, &node, &environment)(rest); err != nil {
+					return nil, err
+				}
+			} else if first.IsSymbol() && (first.AsSymbol() == "fn*" || first.AsSymbol() == "λ") {
+				return specialFormFn(Step5Eval, environment)(rest)
+			} else if first.IsSymbol() && first.AsSymbol() == "if" {
+				if err := tcoSpecialFormIf(Step5Eval, &node, &environment)(rest); err != nil {
+					return nil, err
+				}
+			} else if container, err := evalAst(node, environment, Step5Eval); err == nil {
+				return evalCallable(container)
+			} else {
+				return nil, err
+			}
+		} else {
+			break
+		}
+	}
+
+	return nil, errors.New("Error: Unexpected behavior.")
+}
+
 func specialFormDef(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
 	return func(rest []typing.Type) (*typing.Type, error) {
 		if len(rest) != 2 || !rest[0].IsSymbol() {
@@ -120,6 +162,30 @@ func specialFormDef(eval func(*typing.Type, *Environment) (*typing.Type, error),
 			} else {
 				return nil, ierr
 			}
+		}
+	}
+}
+
+func tcoSpecialFormLet(eval func(*typing.Type, *Environment) (*typing.Type, error), node **typing.Type, environment **Environment) func([]typing.Type) error {
+	return func(rest []typing.Type) error {
+		if len(rest) != 2 || !rest[0].EvenIterable() {
+			return errors.New("Error: Invalid syntax for `let*`.")
+		} else {
+			letEnvironment := NewEnvironment(*environment, []string{}, []typing.Type{})
+
+			bindings := rest[0].Iterable()
+			for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
+				s := bindings[i].ToString(true)
+				if e, ierr := eval(&bindings[j], letEnvironment); ierr == nil {
+					letEnvironment.Set(s, *e)
+				} else {
+					return ierr
+				}
+			}
+
+			*environment = letEnvironment
+			*node = &rest[1]
+			return nil
 		}
 	}
 }
@@ -146,6 +212,22 @@ func specialFormLet(eval func(*typing.Type, *Environment) (*typing.Type, error),
 	}
 }
 
+func tcoSpecialFormDo(eval func(*typing.Type, *Environment) (*typing.Type, error), node **typing.Type, environment **Environment) func([]typing.Type) error {
+	return func(rest []typing.Type) error {
+		if len(rest) < 1 {
+			return errors.New("Error: Invalid syntax for `do`.")
+		} else {
+			toEvaluate := rest[:len(rest)-1]
+			if _, err := evalAst(&typing.Type{List: &toEvaluate}, *environment, eval); err != nil {
+				return err
+			} else {
+				*node = &rest[len(rest)-1]
+				return nil
+			}
+		}
+	}
+}
+
 func specialFormDo(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
 	return func(rest []typing.Type) (*typing.Type, error) {
 		if len(rest) < 1 {
@@ -159,6 +241,42 @@ func specialFormDo(eval func(*typing.Type, *Environment) (*typing.Type, error), 
 				last := list[len(list)-1]
 				return &last, nil
 			}
+		}
+	}
+}
+
+func tcoSpecialFormFn(eval func(*typing.Type, *Environment) (*typing.Type, error), node **typing.Type, environment **Environment) func([]typing.Type) (*typing.Type, error) {
+	return func(rest []typing.Type) (*typing.Type, error) {
+		if len(rest) < 2 || (rest[0].IsList() && rest[0].IsVector()) {
+			return nil, errors.New("Error: Invalid syntax for `fn*`.")
+		} else {
+			var symbols []string
+			for _, node := range rest[0].Iterable() {
+				if node.IsSymbol() {
+					symbols = append(symbols, node.AsSymbol())
+				} else {
+					return nil, errors.New("Error: Invalid syntax for `fn*`.")
+				}
+			}
+
+			callable := func(args ...typing.Type) typing.Type {
+				newEnvironment := NewEnvironment(*environment, symbols, args)
+				if result, err := eval(&rest[1], newEnvironment); err != nil {
+					errorMessage := err.Error()
+					return typing.Type{String: &errorMessage}
+				} else {
+					return *result
+				}
+			}
+
+			function := typing.Function{
+				Params:      symbols,
+				Body:        rest[1],
+				Callable:    callable,
+				Environment: **environment,
+			}
+
+			return &typing.Type{Function: &function}, nil
 		}
 	}
 }
@@ -177,7 +295,7 @@ func specialFormFn(eval func(*typing.Type, *Environment) (*typing.Type, error), 
 				}
 			}
 
-			closure := func(args ...typing.Type) typing.Type {
+			callable := func(args ...typing.Type) typing.Type {
 				newEnvironment := NewEnvironment(environment, symbols, args)
 				if result, err := eval(&rest[1], newEnvironment); err != nil {
 					errorMessage := err.Error()
@@ -187,8 +305,27 @@ func specialFormFn(eval func(*typing.Type, *Environment) (*typing.Type, error), 
 				}
 			}
 
-			return &typing.Type{Callable: &closure}, nil
+			return &typing.Type{Callable: &callable}, nil
 		}
+	}
+}
+
+func tcoSpecialFormIf(eval func(*typing.Type, *Environment) (*typing.Type, error), node **typing.Type, environment **Environment) func([]typing.Type) error {
+	return func(rest []typing.Type) error {
+		length := len(rest)
+
+		if length < 2 || length > 3 {
+			return errors.New("Error: Invalid syntax for `if`.")
+		} else if condition, err := eval(&rest[0], *environment); err != nil {
+			return err
+		} else if !condition.IsNil() && !condition.IsBoolean(false) {
+			*node = &rest[1]
+		} else if length == 3 {
+			*node = &rest[2]
+		} else {
+			*node = typing.NewNil()
+		}
+		return nil
 	}
 }
 

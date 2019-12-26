@@ -17,6 +17,7 @@ type Type struct {
 	Vector   *[]Type
 	Hashmap  *[]Type
 	Callable *(func(...Type) Type)
+	Function *Function
 }
 
 func (node *Type) ToString(readably bool) string {
