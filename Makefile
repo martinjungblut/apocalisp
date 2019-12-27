@@ -33,4 +33,4 @@ clean:
 	rm -f $(BINS) mal
 
 test:
-	GOPATH=$(PWD) go test -v -count=1 apocalisp apocalisp/parser apocalisp/typing apocalisp/escaping
+	GOPATH=$(PWD) go test -v -count=1 apocalisp apocalisp/core apocalisp/parser apocalisp/escaping
