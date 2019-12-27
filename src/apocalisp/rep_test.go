@@ -1,12 +1,13 @@
 package apocalisp
 
 import (
+	"apocalisp/core"
 	"testing"
 )
 
 func Repl_Test(in string, eout string, t *testing.T) {
 	eval := Step4Eval
-	environment := DefaultEnvironment()
+	environment := core.DefaultEnvironment()
 
 	if out, err := Rep(in, environment, eval); err != nil && err.Error() != eout {
 		t.Errorf("(output) `%s` != `%s` (expected)", err.Error(), eout)

@@ -1,4 +1,4 @@
-package typing
+package core
 
 func (node *Type) IsString() bool {
 	return node.String != nil

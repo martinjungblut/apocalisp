@@ -1,14 +1,14 @@
 package apocalisp
 
 import (
+	"apocalisp/core"
 	"apocalisp/parser"
-	"apocalisp/typing"
 	"errors"
 	"fmt"
 	"strings"
 )
 
-func Rep(sexpr string, environment *Environment, eval func(*typing.Type, *Environment) (*typing.Type, error)) (string, error) {
+func Rep(sexpr string, environment *core.Environment, eval func(*core.Type, *core.Environment) (*core.Type, error)) (string, error) {
 	// read
 	t, err := parser.Parse(sexpr)
 	if err != nil {
@@ -27,11 +27,11 @@ func Rep(sexpr string, environment *Environment, eval func(*typing.Type, *Enviro
 	return evaluated.ToString(true), nil
 }
 
-func NoEval(node *typing.Type, environment *Environment) (*typing.Type, error) {
+func NoEval(node *core.Type, environment *core.Environment) (*core.Type, error) {
 	return node, nil
 }
 
-func Step2Eval(node *typing.Type, environment *Environment) (*typing.Type, error) {
+func Step2Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
 	if !node.IsList() {
 		if t, err := evalAst(node, environment, Step2Eval); err != nil {
 			return nil, err
@@ -51,7 +51,7 @@ func Step2Eval(node *typing.Type, environment *Environment) (*typing.Type, error
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
-func Step3Eval(node *typing.Type, environment *Environment) (*typing.Type, error) {
+func Step3Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
 	if !node.IsList() {
 		if t, err := evalAst(node, environment, Step3Eval); err != nil {
 			return nil, err
@@ -77,7 +77,7 @@ func Step3Eval(node *typing.Type, environment *Environment) (*typing.Type, error
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
-func Step4Eval(node *typing.Type, environment *Environment) (*typing.Type, error) {
+func Step4Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
 	if !node.IsList() {
 		if t, err := evalAst(node, environment, Step4Eval); err != nil {
 			return nil, err
@@ -109,7 +109,7 @@ func Step4Eval(node *typing.Type, environment *Environment) (*typing.Type, error
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
-func Step5Eval(node *typing.Type, environment *Environment) (*typing.Type, error) {
+func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
 	for {
 		if !node.IsList() {
 			if t, err := evalAst(node, environment, Step5Eval); err != nil {
@@ -151,8 +151,8 @@ func Step5Eval(node *typing.Type, environment *Environment) (*typing.Type, error
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
-func specialFormDef(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
-	return func(rest []typing.Type) (*typing.Type, error) {
+func specialFormDef(eval func(*core.Type, *core.Environment) (*core.Type, error), environment *core.Environment) func([]core.Type) (*core.Type, error) {
+	return func(rest []core.Type) (*core.Type, error) {
 		if len(rest) != 2 || !rest[0].IsSymbol() {
 			return nil, errors.New("Error: Invalid syntax for `def!`.")
 		} else {
@@ -166,12 +166,12 @@ func specialFormDef(eval func(*typing.Type, *Environment) (*typing.Type, error),
 	}
 }
 
-func tcoSpecialFormLet(eval func(*typing.Type, *Environment) (*typing.Type, error), node **typing.Type, environment **Environment) func([]typing.Type) error {
-	return func(rest []typing.Type) error {
+func tcoSpecialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, error), node **core.Type, environment **core.Environment) func([]core.Type) error {
+	return func(rest []core.Type) error {
 		if len(rest) != 2 || !rest[0].EvenIterable() {
 			return errors.New("Error: Invalid syntax for `let*`.")
 		} else {
-			letEnvironment := NewEnvironment(*environment, []string{}, []typing.Type{})
+			letEnvironment := core.NewEnvironment(*environment, []string{}, []core.Type{})
 
 			bindings := rest[0].Iterable()
 			for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
@@ -190,12 +190,12 @@ func tcoSpecialFormLet(eval func(*typing.Type, *Environment) (*typing.Type, erro
 	}
 }
 
-func specialFormLet(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
-	return func(rest []typing.Type) (*typing.Type, error) {
+func specialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, error), environment *core.Environment) func([]core.Type) (*core.Type, error) {
+	return func(rest []core.Type) (*core.Type, error) {
 		if len(rest) != 2 || !rest[0].EvenIterable() {
 			return nil, errors.New("Error: Invalid syntax for `let*`.")
 		} else {
-			letEnvironment := NewEnvironment(environment, []string{}, []typing.Type{})
+			letEnvironment := core.NewEnvironment(environment, []string{}, []core.Type{})
 
 			bindings := rest[0].Iterable()
 			for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
@@ -212,13 +212,13 @@ func specialFormLet(eval func(*typing.Type, *Environment) (*typing.Type, error),
 	}
 }
 
-func tcoSpecialFormDo(eval func(*typing.Type, *Environment) (*typing.Type, error), node **typing.Type, environment **Environment) func([]typing.Type) error {
-	return func(rest []typing.Type) error {
+func tcoSpecialFormDo(eval func(*core.Type, *core.Environment) (*core.Type, error), node **core.Type, environment **core.Environment) func([]core.Type) error {
+	return func(rest []core.Type) error {
 		if len(rest) < 1 {
 			return errors.New("Error: Invalid syntax for `do`.")
 		} else {
 			toEvaluate := rest[:len(rest)-1]
-			if _, err := evalAst(&typing.Type{List: &toEvaluate}, *environment, eval); err != nil {
+			if _, err := evalAst(&core.Type{List: &toEvaluate}, *environment, eval); err != nil {
 				return err
 			} else {
 				*node = &rest[len(rest)-1]
@@ -228,12 +228,12 @@ func tcoSpecialFormDo(eval func(*typing.Type, *Environment) (*typing.Type, error
 	}
 }
 
-func specialFormDo(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
-	return func(rest []typing.Type) (*typing.Type, error) {
+func specialFormDo(eval func(*core.Type, *core.Environment) (*core.Type, error), environment *core.Environment) func([]core.Type) (*core.Type, error) {
+	return func(rest []core.Type) (*core.Type, error) {
 		if len(rest) < 1 {
 			return nil, errors.New("Error: Invalid syntax for `do`.")
 		} else {
-			toEvaluate := &typing.Type{List: &rest}
+			toEvaluate := &core.Type{List: &rest}
 			if evaluated, err := evalAst(toEvaluate, environment, eval); err != nil {
 				return nil, err
 			} else {
@@ -245,8 +245,8 @@ func specialFormDo(eval func(*typing.Type, *Environment) (*typing.Type, error), 
 	}
 }
 
-func tcoSpecialFormFn(eval func(*typing.Type, *Environment) (*typing.Type, error), node **typing.Type, environment **Environment) func([]typing.Type) (*typing.Type, error) {
-	return func(rest []typing.Type) (*typing.Type, error) {
+func tcoSpecialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, error), node **core.Type, environment **core.Environment) func([]core.Type) (*core.Type, error) {
+	return func(rest []core.Type) (*core.Type, error) {
 		if len(rest) < 2 || (rest[0].IsList() && rest[0].IsVector()) {
 			return nil, errors.New("Error: Invalid syntax for `fn*`.")
 		} else {
@@ -259,30 +259,30 @@ func tcoSpecialFormFn(eval func(*typing.Type, *Environment) (*typing.Type, error
 				}
 			}
 
-			callable := func(args ...typing.Type) typing.Type {
-				newEnvironment := NewEnvironment(*environment, symbols, args)
+			callable := func(args ...core.Type) core.Type {
+				newEnvironment := core.NewEnvironment(*environment, symbols, args)
 				if result, err := eval(&rest[1], newEnvironment); err != nil {
 					errorMessage := err.Error()
-					return typing.Type{String: &errorMessage}
+					return core.Type{String: &errorMessage}
 				} else {
 					return *result
 				}
 			}
 
-			function := typing.Function{
+			function := core.Function{
 				Params:      symbols,
 				Body:        rest[1],
 				Callable:    callable,
 				Environment: **environment,
 			}
 
-			return &typing.Type{Function: &function}, nil
+			return &core.Type{Function: &function}, nil
 		}
 	}
 }
 
-func specialFormFn(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
-	return func(rest []typing.Type) (*typing.Type, error) {
+func specialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, error), environment *core.Environment) func([]core.Type) (*core.Type, error) {
+	return func(rest []core.Type) (*core.Type, error) {
 		if len(rest) < 2 || (rest[0].IsList() && rest[0].IsVector()) {
 			return nil, errors.New("Error: Invalid syntax for `fn*`.")
 		} else {
@@ -295,23 +295,23 @@ func specialFormFn(eval func(*typing.Type, *Environment) (*typing.Type, error), 
 				}
 			}
 
-			callable := func(args ...typing.Type) typing.Type {
-				newEnvironment := NewEnvironment(environment, symbols, args)
+			callable := func(args ...core.Type) core.Type {
+				newEnvironment := core.NewEnvironment(environment, symbols, args)
 				if result, err := eval(&rest[1], newEnvironment); err != nil {
 					errorMessage := err.Error()
-					return typing.Type{String: &errorMessage}
+					return core.Type{String: &errorMessage}
 				} else {
 					return *result
 				}
 			}
 
-			return &typing.Type{Callable: &callable}, nil
+			return &core.Type{Callable: &callable}, nil
 		}
 	}
 }
 
-func tcoSpecialFormIf(eval func(*typing.Type, *Environment) (*typing.Type, error), node **typing.Type, environment **Environment) func([]typing.Type) error {
-	return func(rest []typing.Type) error {
+func tcoSpecialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, error), node **core.Type, environment **core.Environment) func([]core.Type) error {
+	return func(rest []core.Type) error {
 		length := len(rest)
 
 		if length < 2 || length > 3 {
@@ -323,14 +323,14 @@ func tcoSpecialFormIf(eval func(*typing.Type, *Environment) (*typing.Type, error
 		} else if length == 3 {
 			*node = &rest[2]
 		} else {
-			*node = typing.NewNil()
+			*node = core.NewNil()
 		}
 		return nil
 	}
 }
 
-func specialFormIf(eval func(*typing.Type, *Environment) (*typing.Type, error), environment *Environment) func([]typing.Type) (*typing.Type, error) {
-	return func(rest []typing.Type) (*typing.Type, error) {
+func specialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, error), environment *core.Environment) func([]core.Type) (*core.Type, error) {
+	return func(rest []core.Type) (*core.Type, error) {
 		length := len(rest)
 
 		if length < 2 || length > 3 {
@@ -350,12 +350,12 @@ func specialFormIf(eval func(*typing.Type, *Environment) (*typing.Type, error), 
 				return evaluated, nil
 			}
 		} else {
-			return typing.NewNil(), nil
+			return core.NewNil(), nil
 		}
 	}
 }
 
-func evalCallable(node *typing.Type) (*typing.Type, error) {
+func evalCallable(node *core.Type) (*core.Type, error) {
 	first, rest := node.AsList()[0], node.AsList()[1:]
 
 	if first.IsCallable() {
@@ -366,7 +366,7 @@ func evalCallable(node *typing.Type) (*typing.Type, error) {
 	}
 }
 
-func evalAst(node *typing.Type, environment *Environment, eval func(*typing.Type, *Environment) (*typing.Type, error)) (*typing.Type, error) {
+func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Type, *core.Environment) (*core.Type, error)) (*core.Type, error) {
 	if node.IsSymbol() && !strings.HasPrefix(node.AsSymbol(), ":") {
 		if f, err := environment.Get(node.AsSymbol()); err != nil {
 			return nil, err
@@ -376,7 +376,7 @@ func evalAst(node *typing.Type, environment *Environment, eval func(*typing.Type
 	}
 
 	if node.IsList() {
-		all := typing.NewList()
+		all := core.NewList()
 		for _, element := range node.AsList() {
 			if evaluated, err := eval(&element, environment); err == nil {
 				all.AddToList(*evaluated)
@@ -388,7 +388,7 @@ func evalAst(node *typing.Type, environment *Environment, eval func(*typing.Type
 	}
 
 	if node.IsVector() {
-		all := typing.NewVector()
+		all := core.NewVector()
 		for _, element := range node.AsVector() {
 			if evaluated, err := eval(&element, environment); err == nil {
 				all.AddToVector(*evaluated)
@@ -401,7 +401,7 @@ func evalAst(node *typing.Type, environment *Environment, eval func(*typing.Type
 
 	if node.IsHashmap() {
 		currentHashmap := node.AsHashmap()
-		newHashmap := typing.NewHashmap()
+		newHashmap := core.NewHashmap()
 		for i, j := 0, 1; i < len(currentHashmap); i, j = i+2, j+2 {
 			newHashmap.AddToHashmap(currentHashmap[i])
 			if evaluated, err := eval(&(currentHashmap[j]), environment); err != nil {

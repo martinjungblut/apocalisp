@@ -1,4 +1,4 @@
-package typing
+package core
 
 func (node *Type) IsSymbol() bool {
 	return node.Symbol != nil

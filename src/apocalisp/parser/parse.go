@@ -1,20 +1,20 @@
 package parser
 
 import (
+	"apocalisp/core"
 	"apocalisp/escaping"
-	"apocalisp/typing"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
-func Parse(sexpr string) (*typing.Type, error) {
+func Parse(sexpr string) (*core.Type, error) {
 	tokens := tokenize(sexpr)
 	reader := newReader(tokens)
 	return readForm(reader)
 }
 
-func readForm(reader *reader) (*typing.Type, error) {
+func readForm(reader *reader) (*core.Type, error) {
 	token, err := reader.next()
 	if err != nil {
 		return nil, err
@@ -26,8 +26,8 @@ func readForm(reader *reader) (*typing.Type, error) {
 		if list, err := readList(reader); err == nil {
 			symbol := "with-meta"
 			subelements := *list.List
-			seq := []typing.Type{typing.Type{Symbol: &symbol}, subelements[1], subelements[0]}
-			return &typing.Type{List: &seq}, nil
+			seq := []core.Type{core.Type{Symbol: &symbol}, subelements[1], subelements[0]}
+			return &core.Type{List: &seq}, nil
 		} else {
 			fmt.Printf("%s\n", err.Error())
 		}
@@ -55,8 +55,8 @@ func readForm(reader *reader) (*typing.Type, error) {
 	return nil, nil
 }
 
-func readSequence(reader *reader) (*[]typing.Type, error) {
-	sequence := []typing.Type{}
+func readSequence(reader *reader) (*[]core.Type, error) {
+	sequence := []core.Type{}
 	for form, err := readForm(reader); form != nil || err != nil; form, err = readForm(reader) {
 		if err != nil {
 			return nil, err
@@ -67,19 +67,19 @@ func readSequence(reader *reader) (*[]typing.Type, error) {
 	return &sequence, nil
 }
 
-func readAtom(token *string) (*typing.Type, error) {
+func readAtom(token *string) (*core.Type, error) {
 	i, err := strconv.ParseInt(*token, 10, 64)
 	if err == nil {
-		return &typing.Type{Integer: &i}, nil
+		return &core.Type{Integer: &i}, nil
 	}
 
 	if *token == "nil" {
-		return &typing.Type{Nil: true}, nil
+		return &core.Type{Nil: true}, nil
 	}
 
 	if *token == "true" || *token == "false" {
 		if t, err := strconv.ParseBool(*token); err == nil {
-			return &typing.Type{Boolean: &t}, nil
+			return &core.Type{Boolean: &t}, nil
 		}
 	}
 
@@ -87,46 +87,46 @@ func readAtom(token *string) (*typing.Type, error) {
 		if t, err := escaping.UnescapeString(strings.TrimPrefix(strings.TrimSuffix(*token, "\""), "\"")); err != nil {
 			return nil, err
 		} else {
-			return &typing.Type{String: &t}, nil
+			return &core.Type{String: &t}, nil
 		}
 	}
 
-	return &typing.Type{Symbol: token}, nil
+	return &core.Type{Symbol: token}, nil
 }
 
-func readList(reader *reader) (*typing.Type, error) {
+func readList(reader *reader) (*core.Type, error) {
 	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
 	} else {
-		return &typing.Type{List: sequence}, nil
+		return &core.Type{List: sequence}, nil
 	}
 }
 
-func readVector(reader *reader) (*typing.Type, error) {
+func readVector(reader *reader) (*core.Type, error) {
 	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
 	} else {
-		return &typing.Type{Vector: sequence}, nil
+		return &core.Type{Vector: sequence}, nil
 	}
 }
 
-func readHashmap(reader *reader) (*typing.Type, error) {
+func readHashmap(reader *reader) (*core.Type, error) {
 	sequence, err := readSequence(reader)
 	if err != nil {
 		return nil, err
 	} else {
-		return &typing.Type{Hashmap: sequence}, nil
+		return &core.Type{Hashmap: sequence}, nil
 	}
 }
 
-func readPrefixExpansion(reader *reader, symbol string) (*typing.Type, error) {
+func readPrefixExpansion(reader *reader, symbol string) (*core.Type, error) {
 	if form, err := readForm(reader); err != nil {
 		return nil, err
 	} else if form != nil {
-		sequence := []typing.Type{typing.Type{Symbol: &symbol}, *form}
-		return &typing.Type{List: &sequence}, nil
+		sequence := []core.Type{core.Type{Symbol: &symbol}, *form}
+		return &core.Type{List: &sequence}, nil
 	} else {
 		return nil, nil
 	}

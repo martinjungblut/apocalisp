@@ -1,4 +1,4 @@
-package typing
+package core
 
 func (node *Type) IsCallable() bool {
 	return node.Callable != nil

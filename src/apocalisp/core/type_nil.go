@@ -1,4 +1,4 @@
-package typing
+package core
 
 func NewNil() *Type {
 	return &Type{Nil: true}

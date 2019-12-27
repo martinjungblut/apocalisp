@@ -1,4 +1,4 @@
-package typing
+package core
 
 func NewVector() *Type {
 	l := make([]Type, 0)

@@ -1,4 +1,4 @@
-package typing
+package core
 
 func NewList() *Type {
 	l := make([]Type, 0)

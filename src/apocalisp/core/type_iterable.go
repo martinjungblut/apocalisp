@@ -1,4 +1,4 @@
-package typing
+package core
 
 func (node *Type) EvenIterable() bool {
 	if node.IsList() {

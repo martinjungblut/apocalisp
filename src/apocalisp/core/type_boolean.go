@@ -1,4 +1,4 @@
-package typing
+package core
 
 func NewBoolean(value bool) *Type {
 	return &Type{Boolean: &value}

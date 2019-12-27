@@ -1,4 +1,4 @@
-package typing
+package core
 
 func (node *Type) IsInteger() bool {
 	return node.Integer != nil
