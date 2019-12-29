@@ -47,7 +47,7 @@ func (node *Type) ToString(readably bool) string {
 			repr = "nil"
 		} else if node.IsInteger() {
 			repr = fmt.Sprintf("%d", node.AsInteger())
-		} else if node.IsCallable() {
+		} else if node.IsCallable() || node.IsFunction() {
 			repr = "#<function>"
 		} else if node.IsSymbol() {
 			repr = node.AsSymbol()

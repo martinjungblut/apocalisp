@@ -6,3 +6,7 @@ type Function struct {
 	Callable    (func(...Type) Type)
 	Environment Environment
 }
+
+func (node *Type) IsFunction() bool {
+	return node.Function != nil
+}

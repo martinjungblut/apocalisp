@@ -133,13 +133,19 @@ func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 					return nil, err
 				}
 			} else if first.IsSymbol() && (first.AsSymbol() == "fn*" || first.AsSymbol() == "λ") {
-				return specialFormFn(Step5Eval, environment)(rest)
+				return tcoSpecialFormFn(Step5Eval, &node, &environment)(rest)
 			} else if first.IsSymbol() && first.AsSymbol() == "if" {
 				if err := tcoSpecialFormIf(Step5Eval, &node, &environment)(rest); err != nil {
 					return nil, err
 				}
 			} else if container, err := evalAst(node, environment, Step5Eval); err == nil {
-				return evalCallable(container)
+				f, args := container.AsList()[0], container.AsList()[1:]
+				if f.IsFunction() {
+					node = &f.Function.Body
+					environment = core.NewEnvironment(&f.Function.Environment, f.Function.Params, args)
+				} else {
+					return evalCallable(container)
+				}
 			} else {
 				return nil, err
 			}
@@ -359,7 +365,7 @@ func evalCallable(node *core.Type) (*core.Type, error) {
 	first, rest := node.AsList()[0], node.AsList()[1:]
 
 	if first.IsCallable() {
-		result := first.Call(rest...)
+		result := first.CallCallable(rest...)
 		return &result, nil
 	} else {
 		return nil, errors.New(fmt.Sprintf("Error: '%s' is not a function.", first.ToString(true)))
