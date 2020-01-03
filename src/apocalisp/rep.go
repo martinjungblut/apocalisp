@@ -41,10 +41,10 @@ func Step2Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 	} else if node.IsEmptyList() {
 		return node, nil
 	} else if node.IsList() {
-		if container, err := evalAst(node, environment, Step2Eval); err == nil {
-			return evalCallable(container)
-		} else {
+		if container, err := evalAst(node, environment, Step2Eval); err != nil {
 			return nil, err
+		} else {
+			return evalCallable(container)
 		}
 	}
 
@@ -63,14 +63,14 @@ func Step3Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 	} else if node.IsList() {
 		first, rest := node.AsList()[0], node.AsList()[1:]
 
-		if first.IsSymbol() && first.AsSymbol() == "def!" {
+		if first.CompareSymbol("def!") {
 			return specialFormDef(Step3Eval, environment)(rest)
-		} else if first.IsSymbol() && first.AsSymbol() == "let*" {
+		} else if first.CompareSymbol("let*") {
 			return specialFormLet(Step3Eval, environment)(rest)
-		} else if container, err := evalAst(node, environment, Step3Eval); err == nil {
-			return evalCallable(container)
-		} else {
+		} else if container, err := evalAst(node, environment, Step3Eval); err != nil {
 			return nil, err
+		} else {
+			return evalCallable(container)
 		}
 	}
 
@@ -89,20 +89,20 @@ func Step4Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 	} else if node.IsList() {
 		first, rest := node.AsList()[0], node.AsList()[1:]
 
-		if first.IsSymbol() && first.AsSymbol() == "def!" {
+		if first.CompareSymbol("def!") {
 			return specialFormDef(Step4Eval, environment)(rest)
-		} else if first.IsSymbol() && first.AsSymbol() == "let*" {
+		} else if first.CompareSymbol("let*") {
 			return specialFormLet(Step4Eval, environment)(rest)
-		} else if first.IsSymbol() && first.AsSymbol() == "do" {
+		} else if first.CompareSymbol("do") {
 			return specialFormDo(Step4Eval, environment)(rest)
-		} else if first.IsSymbol() && (first.AsSymbol() == "fn*" || first.AsSymbol() == "λ") {
+		} else if first.CompareSymbol("fn*", "λ") {
 			return specialFormFn(Step4Eval, environment)(rest)
-		} else if first.IsSymbol() && first.AsSymbol() == "if" {
+		} else if first.CompareSymbol("if") {
 			return specialFormIf(Step4Eval, environment)(rest)
-		} else if container, err := evalAst(node, environment, Step4Eval); err == nil {
-			return evalCallable(container)
-		} else {
+		} else if container, err := evalAst(node, environment, Step4Eval); err != nil {
 			return nil, err
+		} else {
+			return evalCallable(container)
 		}
 	}
 
@@ -110,44 +110,45 @@ func Step4Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 }
 
 func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
+	// TCO loop
 	for {
 		if !node.IsList() {
-			if t, err := evalAst(node, environment, Step5Eval); err != nil {
+			if evaluated, err := evalAst(node, environment, Step5Eval); err != nil {
 				return nil, err
 			} else {
-				return t, nil
+				return evaluated, nil
 			}
 		} else if node.IsEmptyList() {
 			return node, nil
 		} else if node.IsList() {
 			first, rest := node.AsList()[0], node.AsList()[1:]
 
-			if first.IsSymbol() && first.AsSymbol() == "def!" {
+			if first.CompareSymbol("def!") {
 				return specialFormDef(Step5Eval, environment)(rest)
-			} else if first.IsSymbol() && first.AsSymbol() == "let*" {
+			} else if first.CompareSymbol("let*") {
 				if err := tcoSpecialFormLet(Step5Eval, &node, &environment)(rest); err != nil {
 					return nil, err
 				}
-			} else if first.IsSymbol() && first.AsSymbol() == "do" {
+			} else if first.CompareSymbol("do") {
 				if err := tcoSpecialFormDo(Step5Eval, &node, &environment)(rest); err != nil {
 					return nil, err
 				}
-			} else if first.IsSymbol() && (first.AsSymbol() == "fn*" || first.AsSymbol() == "λ") {
+			} else if first.CompareSymbol("fn*", "λ") {
 				return tcoSpecialFormFn(Step5Eval, &node, &environment)(rest)
-			} else if first.IsSymbol() && first.AsSymbol() == "if" {
+			} else if first.CompareSymbol("if") {
 				if err := tcoSpecialFormIf(Step5Eval, &node, &environment)(rest); err != nil {
 					return nil, err
 				}
-			} else if container, err := evalAst(node, environment, Step5Eval); err == nil {
-				f, args := container.AsList()[0], container.AsList()[1:]
-				if f.IsFunction() {
-					node = &f.Function.Body
-					environment = core.NewEnvironment(&f.Function.Environment, f.Function.Params, args)
+			} else if container, err := evalAst(node, environment, Step5Eval); err != nil {
+				return nil, err
+			} else {
+				first, rest := container.AsList()[0], container.AsList()[1:]
+				if first.IsFunction() {
+					node = &first.Function.Body
+					environment = core.NewEnvironment(&first.Function.Environment, first.Function.Params, rest)
 				} else {
 					return evalCallable(container)
 				}
-			} else {
-				return nil, err
 			}
 		} else {
 			break

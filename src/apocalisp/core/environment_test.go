@@ -13,7 +13,7 @@ func Test_NewEnvironment_Should_Add_Bindings_To_Environment_More_Symbols_Than_No
 	environment := NewEnvironment(nil, []string{"a", "b", "c"}, []Type{firstNode, secondNode})
 
 	if node, err := environment.Get("a"); err == nil {
-		if !node.IsSymbol() || node.AsSymbol() != "firstValue" {
+		if !node.CompareSymbol("firstValue") {
 			t.Error("Symbol not set when calling NewEnvironment().")
 		}
 	} else {
@@ -21,7 +21,7 @@ func Test_NewEnvironment_Should_Add_Bindings_To_Environment_More_Symbols_Than_No
 	}
 
 	if node, err := environment.Get("b"); err == nil {
-		if !node.IsSymbol() || node.AsSymbol() != "secondValue" {
+		if !node.CompareSymbol("secondValue") {
 			t.Error("Symbol not set when calling NewEnvironment().")
 		}
 	} else {
@@ -42,7 +42,7 @@ func Test_NewEnvironment_Should_Add_Bindings_To_Environment_More_Nodes_Than_Symb
 	environment := NewEnvironment(nil, []string{"a"}, []Type{firstNode, secondNode})
 
 	if node, err := environment.Get("a"); err == nil {
-		if !node.IsSymbol() || node.AsSymbol() != "firstValue" {
+		if !node.CompareSymbol("firstValue") {
 			t.Error("Symbol not set when calling NewEnvironment().")
 		}
 	} else {

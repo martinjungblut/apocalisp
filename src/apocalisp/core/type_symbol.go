@@ -11,3 +11,14 @@ func (node *Type) AsSymbol() string {
 		return ""
 	}
 }
+
+func (node *Type) CompareSymbol(others ...string) bool {
+	if node.IsSymbol() {
+		for _, other := range others {
+			if node.AsSymbol() == other {
+				return true
+			}
+		}
+	}
+	return false
+}
