@@ -4,13 +4,13 @@ import (
 	"testing"
 )
 
-func Test_NewBoolean_Creates_Boolean(t *testing.T) {
+func Test_NewBoolean(t *testing.T) {
 	values := []bool{false, true}
 
 	for _, value := range values {
 		node := NewBoolean(value)
 
-		if !node.IsBoolean() || node.AsBoolean() != value {
+		if !node.CompareBoolean(value) {
 			t.Error("NewBoolean() failed.")
 		}
 	}

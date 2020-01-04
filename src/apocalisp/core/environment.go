@@ -135,7 +135,7 @@ func DefaultEnvironment() *Environment {
 
 	env.SetCallable("=", func(args ...Type) Type {
 		if len(args) == 2 {
-			return *NewBoolean(compareNodes(args[0], args[1]))
+			return *NewBoolean(args[0].Compare(args[1]))
 		}
 		return *NewBoolean(false)
 	})
@@ -217,49 +217,4 @@ func DefaultEnvironment() *Environment {
 	})
 
 	return env
-}
-
-func compareIterables(firstList []Type, secondList []Type) bool {
-	if len(firstList) != len(secondList) {
-		return false
-	} else if len(firstList) == 0 {
-		return true
-	}
-
-	result := true
-	for index, _ := range firstList {
-		if !compareNodes(firstList[index], secondList[index]) {
-			result = false
-			break
-		}
-	}
-	return result
-}
-
-func compareNodes(first Type, second Type) bool {
-	if (first.IsList() || first.IsVector()) && (second.IsList() || second.IsVector()) {
-		return compareIterables(first.Iterable(), second.Iterable())
-	}
-
-	if first.IsNil() && second.IsNil() {
-		return true
-	}
-
-	if first.IsBoolean() && second.IsBoolean() {
-		return first.AsBoolean() == second.AsBoolean()
-	}
-
-	if first.IsInteger() && second.IsInteger() {
-		return first.AsInteger() == second.AsInteger()
-	}
-
-	if first.IsString() && second.IsString() {
-		return first.AsString() == second.AsString()
-	}
-
-	if first.IsSymbol() && second.IsSymbol() {
-		return first.AsSymbol() == second.AsSymbol()
-	}
-
-	return false
 }

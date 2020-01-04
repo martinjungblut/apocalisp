@@ -61,3 +61,52 @@ func (node *Type) ToString(readably bool) string {
 	}
 	return ""
 }
+
+func (node Type) Compare(other Type) bool {
+	return compare(node, other)
+}
+
+func compare(first Type, second Type) bool {
+	if (first.IsList() || first.IsVector()) && (second.IsList() || second.IsVector()) {
+		return compareIterables(first.Iterable(), second.Iterable())
+	}
+
+	if first.IsNil() && second.IsNil() {
+		return true
+	}
+
+	if first.IsBoolean() && second.IsBoolean() {
+		return first.AsBoolean() == second.AsBoolean()
+	}
+
+	if first.IsInteger() && second.IsInteger() {
+		return first.AsInteger() == second.AsInteger()
+	}
+
+	if first.IsString() && second.IsString() {
+		return first.AsString() == second.AsString()
+	}
+
+	if first.IsSymbol() && second.IsSymbol() {
+		return first.AsSymbol() == second.AsSymbol()
+	}
+
+	return false
+}
+
+func compareIterables(firstList []Type, secondList []Type) bool {
+	if len(firstList) != len(secondList) {
+		return false
+	} else if len(firstList) == 0 {
+		return true
+	}
+
+	result := true
+	for index, _ := range firstList {
+		if !compare(firstList[index], secondList[index]) {
+			result = false
+			break
+		}
+	}
+	return result
+}
