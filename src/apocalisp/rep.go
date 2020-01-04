@@ -201,7 +201,7 @@ func tcoSpecialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, erro
 		return errors.New("Error: Invalid syntax for `if`.")
 	} else if condition, err := eval(&rest[0], *environment); err != nil {
 		return err
-	} else if !condition.IsNil() && !condition.IsBoolean(false) {
+	} else if !condition.IsNil() && !condition.CompareBoolean(false) {
 		*node = &rest[1]
 	} else if length == 3 {
 		*node = &rest[2]
@@ -301,7 +301,7 @@ func specialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, error),
 		return nil, errors.New("Error: Invalid syntax for `if`.")
 	} else if condition, err := eval(&rest[0], environment); err != nil {
 		return nil, err
-	} else if !condition.IsNil() && !condition.IsBoolean(false) {
+	} else if !condition.IsNil() && !condition.CompareBoolean(false) {
 		if evaluated, err := eval(&rest[1], environment); err != nil {
 			return nil, err
 		} else {

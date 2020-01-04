@@ -38,28 +38,26 @@ func (node *Type) ToString(readably bool) string {
 		return input
 	}
 
-	repr := ""
 	if node != nil {
-		node.IfBoolean(func(value bool) {
-			repr = strconv.FormatBool(value)
-		})
 		if node.IsNil() {
-			repr = "nil"
+			return "nil"
+		} else if node.IsBoolean() {
+			return strconv.FormatBool(node.AsBoolean())
 		} else if node.IsInteger() {
-			repr = fmt.Sprintf("%d", node.AsInteger())
+			return fmt.Sprintf("%d", node.AsInteger())
 		} else if node.IsCallable() || node.IsFunction() {
-			repr = "#<function>"
+			return "#<function>"
 		} else if node.IsSymbol() {
-			repr = node.AsSymbol()
+			return node.AsSymbol()
 		} else if node.IsString() {
-			repr = formatString(node.AsString())
+			return formatString(node.AsString())
 		} else if node.IsList() {
-			repr = formatSequence(node.List, "(", ")")
+			return formatSequence(node.List, "(", ")")
 		} else if node.IsVector() {
-			repr = formatSequence(node.Vector, "[", "]")
+			return formatSequence(node.Vector, "[", "]")
 		} else if node.IsHashmap() {
-			repr = formatSequence(node.Hashmap, "{", "}")
+			return formatSequence(node.Hashmap, "{", "}")
 		}
 	}
-	return repr
+	return ""
 }

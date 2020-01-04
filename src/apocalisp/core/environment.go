@@ -241,29 +241,25 @@ func compareNodes(first Type, second Type) bool {
 		return compareIterables(first.Iterable(), second.Iterable())
 	}
 
-	result := false
-
 	if first.IsNil() && second.IsNil() {
-		result = true
+		return true
 	}
 
-	first.IfBoolean(func(a bool) {
-		second.IfBoolean(func(b bool) {
-			result = a == b
-		})
-	})
+	if first.IsBoolean() && second.IsBoolean() {
+		return first.AsBoolean() == second.AsBoolean()
+	}
 
 	if first.IsInteger() && second.IsInteger() {
-		result = first.AsInteger() == second.AsInteger()
+		return first.AsInteger() == second.AsInteger()
 	}
 
 	if first.IsString() && second.IsString() {
-		result = first.AsString() == second.AsString()
+		return first.AsString() == second.AsString()
 	}
 
 	if first.IsSymbol() && second.IsSymbol() {
-		result = first.AsSymbol() == second.AsSymbol()
+		return first.AsSymbol() == second.AsSymbol()
 	}
 
-	return result
+	return false
 }
