@@ -124,12 +124,12 @@ func DefaultEnvironment() *Environment {
 	})
 
 	env.SetCallable("empty?", func(args ...Type) Type {
-		var value int64 = int64(len(args[0].Iterable()))
+		var value int64 = int64(len(args[0].AsIterable()))
 		return *NewBoolean(value == 0)
 	})
 
 	env.SetCallable("count", func(args ...Type) Type {
-		var value int64 = int64(len(args[0].Iterable()))
+		var value int64 = int64(len(args[0].AsIterable()))
 		return Type{Integer: &value}
 	})
 

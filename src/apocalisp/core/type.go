@@ -68,7 +68,7 @@ func (node Type) Compare(other Type) bool {
 
 func compare(first Type, second Type) bool {
 	if (first.IsList() || first.IsVector()) && (second.IsList() || second.IsVector()) {
-		return compareIterables(first.Iterable(), second.Iterable())
+		return compareIterables(first.AsIterable(), second.AsIterable())
 	}
 
 	if first.IsNil() && second.IsNil() {

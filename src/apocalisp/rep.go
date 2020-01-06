@@ -159,12 +159,12 @@ func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 }
 
 func tcoSpecialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) error {
-	if len(rest) != 2 || !rest[0].EvenIterable() {
+	if len(rest) != 2 || !rest[0].IsEvenIterable() {
 		return errors.New("Error: Invalid syntax for `let*`.")
 	} else {
 		letEnvironment := core.NewEnvironment(*environment, []string{}, []core.Type{})
 
-		bindings := rest[0].Iterable()
+		bindings := rest[0].AsIterable()
 		for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
 			s := bindings[i].ToString(true)
 			if e, ierr := eval(&bindings[j], letEnvironment); ierr == nil {
@@ -217,7 +217,7 @@ func tcoSpecialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, erro
 		return nil, errors.New("Error: Invalid syntax for `fn*`.")
 	} else {
 		var symbols []string
-		for _, node := range rest[0].Iterable() {
+		for _, node := range rest[0].AsIterable() {
 			if node.IsSymbol() {
 				symbols = append(symbols, node.AsSymbol())
 			} else {
@@ -260,12 +260,12 @@ func specialFormDef(eval func(*core.Type, *core.Environment) (*core.Type, error)
 }
 
 func specialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
-	if len(rest) != 2 || !rest[0].EvenIterable() {
+	if len(rest) != 2 || !rest[0].IsEvenIterable() {
 		return nil, errors.New("Error: Invalid syntax for `let*`.")
 	} else {
 		letEnvironment := core.NewEnvironment(environment, []string{}, []core.Type{})
 
-		bindings := rest[0].Iterable()
+		bindings := rest[0].AsIterable()
 		for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
 			s := bindings[i].ToString(true)
 			if e, ierr := eval(&bindings[j], letEnvironment); ierr == nil {
@@ -323,7 +323,7 @@ func specialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, error),
 		return nil, errors.New("Error: Invalid syntax for `fn*`.")
 	} else {
 		var symbols []string
-		for _, node := range rest[0].Iterable() {
+		for _, node := range rest[0].AsIterable() {
 			if node.IsSymbol() {
 				symbols = append(symbols, node.AsSymbol())
 			} else {

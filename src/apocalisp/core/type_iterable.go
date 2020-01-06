@@ -1,6 +1,6 @@
 package core
 
-func (node *Type) EvenIterable() bool {
+func (node *Type) IsEvenIterable() bool {
 	if node.IsList() {
 		return len(*node.List)%2 == 0 && len(*node.List) > 0
 	}
@@ -12,7 +12,7 @@ func (node *Type) EvenIterable() bool {
 	return false
 }
 
-func (node *Type) Iterable() []Type {
+func (node *Type) AsIterable() []Type {
 	if node.IsList() {
 		return *node.List
 	}
