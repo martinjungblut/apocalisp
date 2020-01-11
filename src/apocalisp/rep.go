@@ -78,35 +78,7 @@ func Step3Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 }
 
 func Step4Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
-	if !node.IsList() {
-		if t, err := evalAst(node, environment, Step4Eval); err != nil {
-			return nil, err
-		} else {
-			return t, nil
-		}
-	} else if node.IsEmptyList() {
-		return node, nil
-	} else if node.IsList() {
-		first, rest := node.AsIterable()[0], node.AsIterable()[1:]
-
-		if first.CompareSymbol("def!") {
-			return specialFormDef(Step4Eval, rest, environment)
-		} else if first.CompareSymbol("let*") {
-			return specialFormLet(Step4Eval, rest, environment)
-		} else if first.CompareSymbol("do") {
-			return specialFormDo(Step4Eval, rest, environment)
-		} else if first.CompareSymbol("fn*", "λ") {
-			return specialFormFn(Step4Eval, rest, environment)
-		} else if first.CompareSymbol("if") {
-			return specialFormIf(Step4Eval, rest, environment)
-		} else if container, err := evalAst(node, environment, Step4Eval); err != nil {
-			return nil, err
-		} else {
-			return evalCallable(container)
-		}
-	}
-
-	return nil, errors.New("Error: Unexpected behavior.")
+	return Step5Eval(node, environment)
 }
 
 func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
@@ -213,7 +185,7 @@ func tcoSpecialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, erro
 }
 
 func tcoSpecialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
-	if len(rest) < 2 || (rest[0].IsList() && rest[0].IsVector()) {
+	if len(rest) < 2 || !rest[0].IsIterable() {
 		return nil, errors.New("Error: Invalid syntax for `fn*`.")
 	} else {
 		var symbols []string
@@ -319,7 +291,7 @@ func specialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, error),
 }
 
 func specialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
-	if len(rest) < 2 || (rest[0].IsList() && rest[0].IsVector()) {
+	if len(rest) < 2 || !rest[0].IsIterable() {
 		return nil, errors.New("Error: Invalid syntax for `fn*`.")
 	} else {
 		var symbols []string
@@ -358,23 +330,23 @@ func evalCallable(node *core.Type) (*core.Type, error) {
 
 func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Type, *core.Environment) (*core.Type, error)) (*core.Type, error) {
 	if node.IsSymbol() && !strings.HasPrefix(node.AsSymbol(), ":") {
-		if f, err := environment.Get(node.AsSymbol()); err != nil {
+		if t, err := environment.Get(node.AsSymbol()); err != nil {
 			return nil, err
 		} else {
-			return &f, nil
+			return &t, nil
 		}
 	}
 
 	if node.IsIterable() {
-		all := node.DeriveIterable()
+		newIterable := node.DeriveIterable()
 		for _, element := range node.AsIterable() {
-			if evaluated, err := eval(&element, environment); err == nil {
-				all.Append(*evaluated)
-			} else {
+			if evaluated, err := eval(&element, environment); err != nil {
 				return nil, err
+			} else {
+				newIterable.Append(*evaluated)
 			}
 		}
-		return all, nil
+		return newIterable, nil
 	}
 
 	if node.IsHashmap() {
