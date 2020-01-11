@@ -61,7 +61,7 @@ func Step3Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 	} else if node.IsEmptyList() {
 		return node, nil
 	} else if node.IsList() {
-		first, rest := node.AsList()[0], node.AsList()[1:]
+		first, rest := node.AsIterable()[0], node.AsIterable()[1:]
 
 		if first.CompareSymbol("def!") {
 			return specialFormDef(Step3Eval, rest, environment)
@@ -87,7 +87,7 @@ func Step4Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 	} else if node.IsEmptyList() {
 		return node, nil
 	} else if node.IsList() {
-		first, rest := node.AsList()[0], node.AsList()[1:]
+		first, rest := node.AsIterable()[0], node.AsIterable()[1:]
 
 		if first.CompareSymbol("def!") {
 			return specialFormDef(Step4Eval, rest, environment)
@@ -121,7 +121,7 @@ func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 		} else if node.IsEmptyList() {
 			return node, nil
 		} else if node.IsList() {
-			first, rest := node.AsList()[0], node.AsList()[1:]
+			first, rest := node.AsIterable()[0], node.AsIterable()[1:]
 
 			if first.CompareSymbol("def!") {
 				return specialFormDef(Step5Eval, rest, environment)
@@ -142,7 +142,7 @@ func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 			} else if container, err := evalAst(node, environment, Step5Eval); err != nil {
 				return nil, err
 			} else {
-				first, rest := container.AsList()[0], container.AsList()[1:]
+				first, rest := container.AsIterable()[0], container.AsIterable()[1:]
 				if first.IsFunction() {
 					node = &first.Function.Body
 					environment = core.NewEnvironment(&first.Function.Environment, first.Function.Params, rest)
@@ -287,7 +287,7 @@ func specialFormDo(eval func(*core.Type, *core.Environment) (*core.Type, error),
 		if evaluated, err := evalAst(toEvaluate, environment, eval); err != nil {
 			return nil, err
 		} else {
-			list := evaluated.AsList()
+			list := evaluated.AsIterable()
 			last := list[len(list)-1]
 			return &last, nil
 		}
@@ -346,7 +346,7 @@ func specialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, error),
 }
 
 func evalCallable(node *core.Type) (*core.Type, error) {
-	first, rest := node.AsList()[0], node.AsList()[1:]
+	first, rest := node.AsIterable()[0], node.AsIterable()[1:]
 
 	if first.IsCallable() {
 		result := first.CallCallable(rest...)
@@ -365,23 +365,11 @@ func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Typ
 		}
 	}
 
-	if node.IsList() {
-		all := core.NewList()
-		for _, element := range node.AsList() {
+	if node.IsIterable() {
+		all := node.DeriveIterable()
+		for _, element := range node.AsIterable() {
 			if evaluated, err := eval(&element, environment); err == nil {
-				all.AddToList(*evaluated)
-			} else {
-				return nil, err
-			}
-		}
-		return all, nil
-	}
-
-	if node.IsVector() {
-		all := core.NewVector()
-		for _, element := range node.AsVector() {
-			if evaluated, err := eval(&element, environment); err == nil {
-				all.AddToVector(*evaluated)
+				all.Append(*evaluated)
 			} else {
 				return nil, err
 			}

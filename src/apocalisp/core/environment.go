@@ -114,7 +114,7 @@ func DefaultEnvironment() *Environment {
 	env.SetCallable("list", func(args ...Type) Type {
 		list := NewList()
 		for _, arg := range args {
-			list.AddToList(arg)
+			list.Append(arg)
 		}
 		return *list
 	})

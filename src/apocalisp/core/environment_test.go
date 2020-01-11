@@ -71,16 +71,16 @@ func Test_NewEnvironment_Should_Support_Variadic_Parameters(t *testing.T) {
 			t.Error("Symbol should have been set as a list.")
 		}
 
-		l := node.AsList()
+		l := node.AsIterable()
 		if len(l) != 2 {
 			t.Error("Incorrect list length.")
 		}
 
-		if node.AsList()[0].AsString() != firstValue {
+		if node.AsIterable()[0].AsString() != firstValue {
 			t.Error("Value mismatch.")
 		}
 
-		if node.AsList()[1].AsString() != secondValue {
+		if node.AsIterable()[1].AsString() != secondValue {
 			t.Error("Value mismatch.")
 		}
 	} else {
@@ -101,12 +101,12 @@ func Test_NewEnvironment_Should_Support_Variadic_Parameters_Falling_Back_To_A_Sa
 			t.Error("Symbol should have been set as a list.")
 		}
 
-		l := node.AsList()
+		l := node.AsIterable()
 		if len(l) != 1 {
 			t.Error("Incorrect list length.")
 		}
 
-		if node.AsList()[0].AsString() != secondValue {
+		if node.AsIterable()[0].AsString() != secondValue {
 			t.Error("Value mismatch.")
 		}
 	} else {
@@ -121,7 +121,7 @@ func Test_NewEnvironment_Should_Set_Symbol_As_Empty_List_If_No_Variadic_Argument
 			t.Error("Symbol should have been set as a list.")
 		}
 
-		if len(node.AsList()) != 0 {
+		if len(node.AsIterable()) != 0 {
 			t.Error("Incorrect list length.")
 		}
 	} else {
@@ -134,7 +134,7 @@ func Test_NewEnvironment_Should_Set_Symbol_As_Empty_List_If_No_Variadic_Argument
 			t.Error("Symbol should have been set as a list.")
 		}
 
-		if len(node.AsList()) != 0 {
+		if len(node.AsIterable()) != 0 {
 			t.Error("Incorrect list length.")
 		}
 	} else {
