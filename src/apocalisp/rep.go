@@ -32,49 +32,11 @@ func NoEval(node *core.Type, environment *core.Environment) (*core.Type, error) 
 }
 
 func Step2Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
-	if !node.IsList() {
-		if t, err := evalAst(node, environment, Step2Eval); err != nil {
-			return nil, err
-		} else {
-			return t, nil
-		}
-	} else if node.IsEmptyList() {
-		return node, nil
-	} else if node.IsList() {
-		if container, err := evalAst(node, environment, Step2Eval); err != nil {
-			return nil, err
-		} else {
-			return evalCallable(container)
-		}
-	}
-
-	return nil, errors.New("Error: Unexpected behavior.")
+	return Step5Eval(node, environment)
 }
 
 func Step3Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
-	if !node.IsList() {
-		if t, err := evalAst(node, environment, Step3Eval); err != nil {
-			return nil, err
-		} else {
-			return t, nil
-		}
-	} else if node.IsEmptyList() {
-		return node, nil
-	} else if node.IsList() {
-		first, rest := node.AsIterable()[0], node.AsIterable()[1:]
-
-		if first.CompareSymbol("def!") {
-			return specialFormDef(Step3Eval, rest, environment)
-		} else if first.CompareSymbol("let*") {
-			return specialFormLet(Step3Eval, rest, environment)
-		} else if container, err := evalAst(node, environment, Step3Eval); err != nil {
-			return nil, err
-		} else {
-			return evalCallable(container)
-		}
-	}
-
-	return nil, errors.New("Error: Unexpected behavior.")
+	return Step5Eval(node, environment)
 }
 
 func Step4Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
@@ -228,92 +190,6 @@ func specialFormDef(eval func(*core.Type, *core.Environment) (*core.Type, error)
 		} else {
 			return nil, ierr
 		}
-	}
-}
-
-func specialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
-	if len(rest) != 2 || !rest[0].IsEvenIterable() {
-		return nil, errors.New("Error: Invalid syntax for `let*`.")
-	} else {
-		letEnvironment := core.NewEnvironment(environment, []string{}, []core.Type{})
-
-		bindings := rest[0].AsIterable()
-		for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
-			s := bindings[i].ToString(true)
-			if e, ierr := eval(&bindings[j], letEnvironment); ierr == nil {
-				letEnvironment.Set(s, *e)
-			} else {
-				return nil, ierr
-			}
-		}
-
-		return eval(&rest[1], letEnvironment)
-	}
-}
-
-func specialFormDo(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
-	if len(rest) < 1 {
-		return nil, errors.New("Error: Invalid syntax for `do`.")
-	} else {
-		toEvaluate := &core.Type{List: &rest}
-		if evaluated, err := evalAst(toEvaluate, environment, eval); err != nil {
-			return nil, err
-		} else {
-			list := evaluated.AsIterable()
-			last := list[len(list)-1]
-			return &last, nil
-		}
-	}
-}
-
-func specialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
-	length := len(rest)
-
-	if length < 2 || length > 3 {
-		return nil, errors.New("Error: Invalid syntax for `if`.")
-	} else if condition, err := eval(&rest[0], environment); err != nil {
-		return nil, err
-	} else if !condition.IsNil() && !condition.CompareBoolean(false) {
-		if evaluated, err := eval(&rest[1], environment); err != nil {
-			return nil, err
-		} else {
-			return evaluated, nil
-		}
-	} else if length == 3 {
-		if evaluated, err := eval(&rest[2], environment); err != nil {
-			return nil, err
-		} else {
-			return evaluated, nil
-		}
-	} else {
-		return core.NewNil(), nil
-	}
-}
-
-func specialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
-	if len(rest) < 2 || !rest[0].IsIterable() {
-		return nil, errors.New("Error: Invalid syntax for `fn*`.")
-	} else {
-		var symbols []string
-		for _, node := range rest[0].AsIterable() {
-			if node.IsSymbol() {
-				symbols = append(symbols, node.AsSymbol())
-			} else {
-				return nil, errors.New("Error: Invalid syntax for `fn*`.")
-			}
-		}
-
-		callable := func(args ...core.Type) core.Type {
-			newEnvironment := core.NewEnvironment(environment, symbols, args)
-			if result, err := eval(&rest[1], newEnvironment); err != nil {
-				errorMessage := err.Error()
-				return core.Type{String: &errorMessage}
-			} else {
-				return *result
-			}
-		}
-
-		return &core.Type{Callable: &callable}, nil
 	}
 }
 
