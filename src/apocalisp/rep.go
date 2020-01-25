@@ -92,6 +92,10 @@ func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 	return nil, errors.New("Error: Unexpected behavior.")
 }
 
+func Step6Eval(node *core.Type, environment *core.Environment) (*core.Type, error) {
+	return Step5Eval(node, environment)
+}
+
 func tcoSpecialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) error {
 	if len(rest) != 2 || !rest[0].IsEvenIterable() {
 		return errors.New("Error: Invalid syntax for `let*`.")

@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+type Parser struct{}
+
+func (parser Parser) Parse(sexpr string) (*core.Type, error) {
+	return Parse(sexpr)
+}
+
 func Parse(sexpr string) (*core.Type, error) {
 	tokens := tokenize(sexpr)
 	reader := newReader(tokens)

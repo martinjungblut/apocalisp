@@ -74,7 +74,7 @@ func (env *Environment) Get(symbol string) (Type, error) {
 	return Type{}, errors.New(fmt.Sprintf("Error: '%s' not found.", symbol))
 }
 
-func DefaultEnvironment() *Environment {
+func DefaultEnvironment(parser Parser) *Environment {
 	env := NewEnvironment(nil, []string{}, []Type{})
 
 	env.SetCallable("+", func(inputs ...Type) Type {
@@ -213,6 +213,14 @@ func DefaultEnvironment() *Environment {
 			parts = append(parts, arg.ToString(false))
 		}
 		fmt.Println(strings.Join(parts, " "))
+		return *NewNil()
+	})
+
+	env.SetCallable("read-string", func(args ...Type) Type {
+		sexpr := args[0].AsString()
+		if node, err := parser.Parse(sexpr); err == nil && node != nil {
+			return *node
+		}
 		return *NewNil()
 	})
 
