@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
 )
 
@@ -220,6 +221,15 @@ func DefaultEnvironment(parser Parser) *Environment {
 		sexpr := args[0].AsString()
 		if node, err := parser.Parse(sexpr); err == nil && node != nil {
 			return *node
+		}
+		return *NewNil()
+	})
+
+	env.SetCallable("slurp", func(args ...Type) Type {
+		filepath := args[0].AsString()
+		if contents, err := ioutil.ReadFile(filepath); err == nil {
+			scontents := string(contents)
+			return Type{String: &scontents}
 		}
 		return *NewNil()
 	})
