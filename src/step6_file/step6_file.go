@@ -2,6 +2,7 @@ package main
 
 import (
 	"apocalisp"
+	"apocalisp/core"
 	"fmt"
 	"github.com/peterh/liner"
 	"os"
@@ -10,6 +11,9 @@ import (
 )
 
 func main() {
+	// reference to evaluation function
+	EVAL := apocalisp.Step6Eval
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		fmt.Print("Error while calling 'os.Getwd()'.")
@@ -19,7 +23,6 @@ func main() {
 
 	line := liner.NewLiner()
 	defer line.Close()
-
 	line.SetCtrlCAborts(true)
 
 	// read/write history
@@ -34,21 +37,30 @@ func main() {
 		}
 	}()
 
+	// environment
 	environment := apocalisp.DefaultEnvironment()
+	environment.SetCallable("eval", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			node := args[0]
+			if r, err := EVAL(&node, environment); err == nil {
+				return *r
+			}
+		}
+		return *core.NewNil()
+	})
 
-	_, _ = apocalisp.Rep("(def! not (fn* (a) (if a false true)))", environment, apocalisp.Step6Eval)
+	_, _ = apocalisp.Rep("(def! not (fn* (a) (if a false true)))", environment, EVAL)
 
 	// decrease max stack size to make TCO-related tests useful
 	debug.SetMaxStack(1 * 1024 * 1024)
 
 	// repl
-	fmt.Print("This is apocaLISP.\n")
-
+	fmt.Println("This is apocaLISP.")
 	for {
 		if sexpr, err := line.Prompt("user> "); err == nil {
 			line.AppendHistory(sexpr)
 
-			output, err := apocalisp.Rep(sexpr, environment, apocalisp.Step6Eval)
+			output, err := apocalisp.Rep(sexpr, environment, EVAL)
 			if err == nil {
 				if len(output) > 0 {
 					fmt.Printf("%s\n", output)
@@ -57,7 +69,7 @@ func main() {
 				fmt.Printf("%s\n", err.Error())
 			}
 		} else {
-			fmt.Print("\nFarewell!\n")
+			fmt.Println("\nFarewell!")
 			break
 		}
 	}
