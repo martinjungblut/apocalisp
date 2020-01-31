@@ -49,7 +49,8 @@ func main() {
 		return *core.NewNil()
 	})
 
-	_, _ = apocalisp.Rep("(def! not (fn* (a) (if a false true)))", environment, EVAL)
+	_, _ = apocalisp.Rep(`(def! not (fn* (a) (if a false true)))`, environment, EVAL)
+	_, _ = apocalisp.Rep(`(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))`, environment, EVAL)
 
 	// decrease max stack size to make TCO-related tests useful
 	debug.SetMaxStack(1 * 1024 * 1024)

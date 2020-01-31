@@ -18,6 +18,7 @@ type Type struct {
 	Hashmap  *[]Type
 	Callable *(func(...Type) Type)
 	Function *Function
+	Atom     *Type
 }
 
 func (node *Type) ToString(readably bool) string {

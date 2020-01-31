@@ -234,5 +234,50 @@ func DefaultEnvironment(parser Parser) *Environment {
 		return *NewNil()
 	})
 
+	env.SetCallable("atom", func(args ...Type) Type {
+		if len(args) >= 1 {
+			node := args[0]
+			return Type{Atom: &node}
+		}
+		return *NewNil()
+	})
+
+	env.SetCallable("atom?", func(args ...Type) Type {
+		if len(args) >= 1 {
+			node := args[0]
+			return *NewBoolean(node.Atom != nil)
+		}
+		return *NewBoolean(false)
+	})
+
+	env.SetCallable("deref", func(args ...Type) Type {
+		if len(args) >= 1 {
+			node := args[0]
+			if node.Atom != nil {
+				return *node.Atom
+			}
+		}
+		return *NewNil()
+	})
+
+	env.SetCallable("reset!", func(args ...Type) Type {
+		if len(args) >= 2 {
+			atom := args[0]
+			value := args[1]
+			atom.Atom = &value
+			return value
+		}
+		return *NewNil()
+	})
+
+	// env.SetCallable("swap!", func(args ...Type) Type {
+	// 	if len(args) >= 2 {
+	// 		atom := args[0]
+	// 		function := args[1]
+	// 		fargs := args[2:]
+	// 	}
+	// 	return *NewNil()
+	// })
+
 	return env
 }
