@@ -10,3 +10,7 @@ type Function struct {
 func (node *Type) IsFunction() bool {
 	return node.Function != nil
 }
+
+func (node *Type) CallFunction(parameters ...Type) Type {
+	return (node.Function.Callable)(parameters...)
+}

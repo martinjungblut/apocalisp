@@ -58,6 +58,8 @@ func (node *Type) ToString(readably bool) string {
 			return formatSequence(node.Vector, "[", "]")
 		} else if node.IsHashmap() {
 			return formatSequence(node.Hashmap, "{", "}")
+		} else if node.IsAtom() {
+			return fmt.Sprintf("(atom %s)", node.Atom.ToString(readably))
 		}
 	}
 	return ""

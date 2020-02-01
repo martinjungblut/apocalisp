@@ -226,58 +226,64 @@ func DefaultEnvironment(parser Parser) *Environment {
 	})
 
 	env.SetCallable("slurp", func(args ...Type) Type {
-		filepath := args[0].AsString()
-		if contents, err := ioutil.ReadFile(filepath); err == nil {
-			scontents := string(contents)
-			return Type{String: &scontents}
+		if len(args) >= 1 {
+			filepath := args[0].AsString()
+			if contents, err := ioutil.ReadFile(filepath); err == nil {
+				scontents := string(contents)
+				return Type{String: &scontents}
+			}
 		}
 		return *NewNil()
 	})
 
 	env.SetCallable("atom", func(args ...Type) Type {
 		if len(args) >= 1 {
-			node := args[0]
-			return Type{Atom: &node}
+			return *NewAtom(args[0])
 		}
 		return *NewNil()
 	})
 
 	env.SetCallable("atom?", func(args ...Type) Type {
 		if len(args) >= 1 {
-			node := args[0]
-			return *NewBoolean(node.Atom != nil)
+			return *NewBoolean(args[0].IsAtom())
 		}
 		return *NewBoolean(false)
 	})
 
 	env.SetCallable("deref", func(args ...Type) Type {
 		if len(args) >= 1 {
-			node := args[0]
-			if node.Atom != nil {
-				return *node.Atom
-			}
+			return args[0].AsAtom()
 		}
 		return *NewNil()
 	})
 
 	env.SetCallable("reset!", func(args ...Type) Type {
 		if len(args) >= 2 {
-			atom := args[0]
-			value := args[1]
-			atom.Atom = &value
-			return value
+			args[0].Atom = &args[1]
+			return args[1]
 		}
 		return *NewNil()
 	})
 
-	// env.SetCallable("swap!", func(args ...Type) Type {
-	// 	if len(args) >= 2 {
-	// 		atom := args[0]
-	// 		function := args[1]
-	// 		fargs := args[2:]
-	// 	}
-	// 	return *NewNil()
-	// })
+	env.SetCallable("swap!", func(args ...Type) Type {
+		if len(args) >= 2 {
+			node, callable := args[0], args[1]
+			fargs := append([]Type{node.AsAtom()}, args[2:]...)
+
+			if node.IsAtom() && callable.IsCallable() {
+				result := callable.CallCallable(fargs...)
+				node.Atom = &result
+				return result
+			}
+
+			if node.IsAtom() && callable.IsFunction() {
+				result := callable.CallFunction(fargs...)
+				node.Atom = &result
+				return result
+			}
+		}
+		return *NewNil()
+	})
 
 	return env
 }
