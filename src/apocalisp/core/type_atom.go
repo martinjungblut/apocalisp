@@ -1,7 +1,8 @@
 package core
 
 func NewAtom(value Type) *Type {
-	return &Type{Atom: &value}
+	ptr := &value
+	return &Type{Atom: &ptr}
 }
 
 func (node *Type) IsAtom() bool {
@@ -10,7 +11,11 @@ func (node *Type) IsAtom() bool {
 
 func (node *Type) AsAtom() Type {
 	if node.IsAtom() {
-		return *node.Atom
+		return **node.Atom
 	}
 	return *NewNil()
+}
+
+func (node *Type) SetAtom(value Type) {
+	*node.Atom = &value
 }

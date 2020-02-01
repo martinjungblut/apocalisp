@@ -259,8 +259,10 @@ func DefaultEnvironment(parser Parser) *Environment {
 
 	env.SetCallable("reset!", func(args ...Type) Type {
 		if len(args) >= 2 {
-			args[0].Atom = &args[1]
-			return args[1]
+			if args[0].IsAtom() {
+				args[0].SetAtom(args[1])
+				return args[1]
+			}
 		}
 		return *NewNil()
 	})
@@ -272,13 +274,13 @@ func DefaultEnvironment(parser Parser) *Environment {
 
 			if node.IsAtom() && callable.IsCallable() {
 				result := callable.CallCallable(fargs...)
-				node.Atom = &result
+				node.SetAtom(result)
 				return result
 			}
 
 			if node.IsAtom() && callable.IsFunction() {
 				result := callable.CallFunction(fargs...)
-				node.Atom = &result
+				node.SetAtom(result)
 				return result
 			}
 		}

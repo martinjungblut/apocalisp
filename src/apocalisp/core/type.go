@@ -18,10 +18,10 @@ type Type struct {
 	Hashmap  *[]Type
 	Callable *(func(...Type) Type)
 	Function *Function
-	Atom     *Type
+	Atom     **Type
 }
 
-func (node *Type) ToString(readably bool) string {
+func (node Type) ToString(readably bool) string {
 	formatSequence := func(sequence *[]Type, lWrap string, rWrap string) string {
 		tokens := []string{}
 		for _, element := range *sequence {
@@ -39,28 +39,26 @@ func (node *Type) ToString(readably bool) string {
 		return input
 	}
 
-	if node != nil {
-		if node.IsNil() {
-			return "nil"
-		} else if node.IsBoolean() {
-			return strconv.FormatBool(node.AsBoolean())
-		} else if node.IsInteger() {
-			return fmt.Sprintf("%d", node.AsInteger())
-		} else if node.IsCallable() || node.IsFunction() {
-			return "#<function>"
-		} else if node.IsSymbol() {
-			return node.AsSymbol()
-		} else if node.IsString() {
-			return formatString(node.AsString())
-		} else if node.IsList() {
-			return formatSequence(node.List, "(", ")")
-		} else if node.IsVector() {
-			return formatSequence(node.Vector, "[", "]")
-		} else if node.IsHashmap() {
-			return formatSequence(node.Hashmap, "{", "}")
-		} else if node.IsAtom() {
-			return fmt.Sprintf("(atom %s)", node.Atom.ToString(readably))
-		}
+	if node.IsNil() {
+		return "nil"
+	} else if node.IsBoolean() {
+		return strconv.FormatBool(node.AsBoolean())
+	} else if node.IsInteger() {
+		return fmt.Sprintf("%d", node.AsInteger())
+	} else if node.IsCallable() || node.IsFunction() {
+		return "#<function>"
+	} else if node.IsSymbol() {
+		return node.AsSymbol()
+	} else if node.IsString() {
+		return formatString(node.AsString())
+	} else if node.IsList() {
+		return formatSequence(node.List, "(", ")")
+	} else if node.IsVector() {
+		return formatSequence(node.Vector, "[", "]")
+	} else if node.IsHashmap() {
+		return formatSequence(node.Hashmap, "{", "}")
+	} else if node.IsAtom() {
+		return fmt.Sprintf("(atom %s)", node.AsAtom().ToString(readably))
 	}
 	return ""
 }
