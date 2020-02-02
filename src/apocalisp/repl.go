@@ -10,6 +10,9 @@ import (
 )
 
 func Repl(eval func(*core.Type, *core.Environment) (*core.Type, error)) {
+	// decrease max stack size to make TCO-related tests useful
+	debug.SetMaxStack(1 * 1024 * 1024)
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		fmt.Print("Error while calling 'os.Getwd()'.")
@@ -45,11 +48,14 @@ func Repl(eval func(*core.Type, *core.Environment) (*core.Type, error)) {
 		return *core.NewNil()
 	})
 
+	argv := core.NewList()
+	for i, _ := range os.Args[1:] {
+		argv.Append(core.Type{String: &os.Args[i+1]})
+	}
+	environment.Set("*ARGV*", *argv)
+
 	_, _ = Rep(`(def! not (fn* (a) (if a false true)))`, environment, eval)
 	_, _ = Rep(`(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))`, environment, eval)
-
-	// decrease max stack size to make TCO-related tests useful
-	debug.SetMaxStack(1 * 1024 * 1024)
 
 	// repl
 	fmt.Println("This is apocaLISP.")
