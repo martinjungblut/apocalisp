@@ -67,7 +67,7 @@ func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 				if err := tcoSpecialFormDo(Step5Eval, rest, &node, &environment); err != nil {
 					return nil, err
 				}
-			} else if first.CompareSymbol("fn*", "λ") {
+			} else if first.CompareSymbol("fn*", `\`) {
 				return tcoSpecialFormFn(Step5Eval, rest, &node, &environment)
 			} else if first.CompareSymbol("if") {
 				if err := tcoSpecialFormIf(Step5Eval, rest, &node, &environment); err != nil {

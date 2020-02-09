@@ -21,8 +21,8 @@ func Test_String_Parsing_And_Evaluation(t *testing.T) {
 	Repl_Test("\"test\"", "\"test\"", t)
 }
 
-func Test_Lambda_Works_As_Function(t *testing.T) {
-	Repl_Test("((λ (a b) (+ a b)) 3 4)", "7", t)
-	Repl_Test("((λ (a b) (+ a b)) 2 1)", "3", t)
-	Repl_Test("((λ (a b) (- a b)) 10 9)", "1", t)
+func Test_Alternative_Function_Notation(t *testing.T) {
+	Repl_Test(`((\ (a b) (+ a b)) 3 4)`, `7`, t)
+	Repl_Test(`((\ (a b) (+ a b)) 2 1)`, `3`, t)
+	Repl_Test(`((\ (a b) (- a b)) 10 9)`, `1`, t)
 }
