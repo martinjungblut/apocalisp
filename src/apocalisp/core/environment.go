@@ -79,37 +79,103 @@ func DefaultEnvironment(parser Parser) *Environment {
 	env := NewEnvironment(nil, []string{}, []Type{})
 
 	env.SetCallable("+", func(inputs ...Type) Type {
-		r := *inputs[0].Integer
+		floatFound := false
+		var rfloat float64 = 0
+		if inputs[0].IsInteger() {
+			rfloat = float64(inputs[0].AsInteger())
+		} else if inputs[0].IsFloat() {
+			rfloat = inputs[0].AsFloat()
+			floatFound = true
+		}
+
 		for _, input := range inputs[1:] {
 			if input.IsInteger() {
-				r += *input.Integer
+				rfloat += float64(input.AsInteger())
+			} else if input.IsFloat() {
+				rfloat += input.AsFloat()
+				floatFound = true
 			}
 		}
-		return Type{Integer: &r}
+
+		if floatFound {
+			return Type{Float: &rfloat}
+		} else {
+			var rint int64 = int64(rfloat)
+			return Type{Integer: &rint}
+		}
 	})
 
 	env.SetCallable("-", func(inputs ...Type) Type {
-		r := *inputs[0].Integer
-		for _, input := range inputs[1:] {
-			r -= *input.Integer
+		floatFound := false
+		var rfloat float64 = 0
+		if inputs[0].IsInteger() {
+			rfloat = float64(inputs[0].AsInteger())
+		} else if inputs[0].IsFloat() {
+			rfloat = inputs[0].AsFloat()
+			floatFound = true
 		}
-		return Type{Integer: &r}
+
+		for _, input := range inputs[1:] {
+			if input.IsInteger() {
+				rfloat -= float64(input.AsInteger())
+			} else if input.IsFloat() {
+				rfloat -= input.AsFloat()
+				floatFound = true
+			}
+		}
+
+		if floatFound {
+			return Type{Float: &rfloat}
+		} else {
+			var rint int64 = int64(rfloat)
+			return Type{Integer: &rint}
+		}
 	})
 
 	env.SetCallable("/", func(inputs ...Type) Type {
-		r := *inputs[0].Integer
-		for _, input := range inputs[1:] {
-			r /= *input.Integer
+		var rfloat float64 = 0
+		if inputs[0].IsInteger() {
+			rfloat = float64(inputs[0].AsInteger())
+		} else if inputs[0].IsFloat() {
+			rfloat = inputs[0].AsFloat()
 		}
-		return Type{Integer: &r}
+
+		for _, input := range inputs[1:] {
+			if input.IsInteger() {
+				rfloat /= float64(input.AsInteger())
+			} else if input.IsFloat() {
+				rfloat /= input.AsFloat()
+			}
+		}
+
+		return Type{Float: &rfloat}
 	})
 
 	env.SetCallable("*", func(inputs ...Type) Type {
-		r := *inputs[0].Integer
-		for _, input := range inputs[1:] {
-			r *= *input.Integer
+		floatFound := false
+		var rfloat float64 = 0
+		if inputs[0].IsInteger() {
+			rfloat = float64(inputs[0].AsInteger())
+		} else if inputs[0].IsFloat() {
+			rfloat = inputs[0].AsFloat()
+			floatFound = true
 		}
-		return Type{Integer: &r}
+
+		for _, input := range inputs[1:] {
+			if input.IsInteger() {
+				rfloat *= float64(input.AsInteger())
+			} else if input.IsFloat() {
+				rfloat *= input.AsFloat()
+				floatFound = true
+			}
+		}
+
+		if floatFound {
+			return Type{Float: &rfloat}
+		} else {
+			var rint int64 = int64(rfloat)
+			return Type{Integer: &rint}
+		}
 	})
 
 	env.SetCallable("list", func(args ...Type) Type {

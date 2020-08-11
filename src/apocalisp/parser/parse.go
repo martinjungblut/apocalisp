@@ -79,6 +79,11 @@ func readAtom(token *string) (*core.Type, error) {
 		return &core.Type{Integer: &i}, nil
 	}
 
+	f, err := strconv.ParseFloat(*token, 64)
+	if err == nil {
+		return &core.Type{Float: &f}, nil
+	}
+
 	if *token == "nil" {
 		return &core.Type{Nil: true}, nil
 	}

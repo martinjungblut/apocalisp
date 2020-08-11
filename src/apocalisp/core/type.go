@@ -11,6 +11,7 @@ type Type struct {
 	Nil      bool
 	Boolean  *bool
 	Integer  *int64
+	Float    *float64
 	Symbol   *string
 	String   *string
 	List     *[]Type
@@ -45,6 +46,8 @@ func (node Type) ToString(readably bool) string {
 		return strconv.FormatBool(node.AsBoolean())
 	} else if node.IsInteger() {
 		return fmt.Sprintf("%d", node.AsInteger())
+	} else if node.IsFloat() {
+		return fmt.Sprintf("%f", node.AsFloat())
 	} else if node.IsCallable() || node.IsFunction() {
 		return "#<function>"
 	} else if node.IsSymbol() {
@@ -82,6 +85,10 @@ func compare(first Type, second Type) bool {
 
 	if first.IsInteger() && second.IsInteger() {
 		return first.AsInteger() == second.AsInteger()
+	}
+
+	if first.IsFloat() && second.IsFloat() {
+		return first.AsFloat() == second.AsFloat()
 	}
 
 	if first.IsString() && second.IsString() {
