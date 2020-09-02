@@ -374,5 +374,15 @@ func DefaultEnvironment(parser Parser) *Environment {
 		return list
 	})
 
+	env.SetCallable("vec", func(args ...Type) Type {
+		vector := *NewVector()
+		if len(args) >= 1 {
+			for _, node := range args[0].AsIterable() {
+				vector.Append(node)
+			}
+		}
+		return vector
+	})
+
 	return env
 }
