@@ -353,5 +353,26 @@ func DefaultEnvironment(parser Parser) *Environment {
 		return *NewNil()
 	})
 
+	env.SetCallable("cons", func(args ...Type) Type {
+		list := *NewList()
+		if len(args) >= 2 {
+			list.Append(args[0])
+			for _, node := range args[1].AsIterable() {
+				list.Append(node)
+			}
+		}
+		return list
+	})
+
+	env.SetCallable("concat", func(args ...Type) Type {
+		list := *NewList()
+		for _, arg := range args {
+			for _, node := range arg.AsIterable() {
+				list.Append(node)
+			}
+		}
+		return list
+	})
+
 	return env
 }
