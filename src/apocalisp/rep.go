@@ -73,6 +73,8 @@ func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 				if err := tcoSpecialFormIf(Step5Eval, rest, &node, &environment); err != nil {
 					return nil, err
 				}
+			} else if first.CompareSymbol("quote") {
+				return specialFormQuote(Step5Eval, rest, environment)
 			} else if container, err := evalAst(node, environment, Step5Eval); err != nil {
 				return nil, err
 			} else {
@@ -198,6 +200,14 @@ func specialFormDef(eval func(*core.Type, *core.Environment) (*core.Type, error)
 		} else {
 			return nil, ierr
 		}
+	}
+}
+
+func specialFormQuote(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
+	if len(rest) < 1 {
+		return nil, errors.New("Error: Invalid syntax for `quote`.")
+	} else {
+		return &rest[0], nil
 	}
 }
 
