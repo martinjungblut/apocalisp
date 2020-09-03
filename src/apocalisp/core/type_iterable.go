@@ -1,7 +1,10 @@
 package core
 
-func NewList() *Type {
+func NewList(args ...Type) *Type {
 	slice := make([]Type, 0)
+	for _, arg := range args {
+		slice = append(slice, arg)
+	}
 	return &Type{List: &slice}
 }
 

@@ -406,29 +406,18 @@ func Quasiquote(args ...Type) Type {
 				eli := el.AsIterable()
 
 				if len(eli) >= 2 && eli[0].CompareSymbol("splice-unquote") {
-					nr := *NewList()
-					nr.Append(Type{Symbol: &concat})
-					nr.Append(eli[1])
-					nr.Append(result)
-					result = nr
+					result = *NewList(Type{Symbol: &concat}, eli[1], result)
 				} else {
-					nr := *NewList()
-					nr.Append(Type{Symbol: &cons})
-					nr.Append(Quasiquote(el))
-					nr.Append(result)
-					result = nr
+					result = *NewList(Type{Symbol: &cons}, Quasiquote(el), result)
 				}
 			}
 
 			return result
 		} else if ast.IsSymbol() || ast.IsHashmap() {
-			nr := *NewList()
-			nr.Append(Type{Symbol: &quote})
-			nr.Append(ast)
-			return nr
+			return *NewList(Type{Symbol: &quote}, ast)
+		} else {
+			return ast
 		}
-
-		return ast
 	}
 
 	return *NewNil()
