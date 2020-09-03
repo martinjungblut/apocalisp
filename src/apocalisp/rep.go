@@ -75,6 +75,10 @@ func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 				}
 			} else if first.CompareSymbol("quote") {
 				return specialFormQuote(Step5Eval, rest, environment)
+			} else if first.CompareSymbol("quasiquote") {
+				if err := tcoSpecialFormQuasiquote(Step5Eval, rest, &node, &environment); err != nil {
+					return nil, err
+				}
 			} else if container, err := evalAst(node, environment, Step5Eval); err != nil {
 				return nil, err
 			} else {
@@ -188,6 +192,16 @@ func tcoSpecialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, erro
 
 		return &core.Type{Function: &function}, nil
 	}
+}
+
+func tcoSpecialFormQuasiquote(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) error {
+	if len(rest) < 1 {
+		errors.New("Error: Invalid syntax for `quasiquote`.")
+	} else {
+		newNode := core.Quasiquote(rest[0])
+		*node = &newNode
+	}
+	return nil
 }
 
 func specialFormDef(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {

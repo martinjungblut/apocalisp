@@ -386,3 +386,50 @@ func DefaultEnvironment(parser Parser) *Environment {
 
 	return env
 }
+
+func Quasiquote(args ...Type) Type {
+	concat := "concat"
+	cons := "cons"
+	quote := "quote"
+
+	if len(args) >= 1 {
+		ast := args[0]
+		iterable := ast.AsIterable()
+
+		if len(iterable) >= 2 && iterable[0].CompareSymbol("unquote") {
+			return iterable[1]
+		} else if len(iterable) >= 1 {
+			result := *NewList()
+
+			for i := len(iterable) - 1; i >= 0; i-- {
+				el := iterable[i]
+				eli := el.AsIterable()
+
+				if len(eli) >= 2 && eli[0].CompareSymbol("splice-unquote") {
+					nr := *NewList()
+					nr.Append(Type{Symbol: &concat})
+					nr.Append(eli[1])
+					nr.Append(result)
+					result = nr
+				} else {
+					nr := *NewList()
+					nr.Append(Type{Symbol: &cons})
+					nr.Append(Quasiquote(el))
+					nr.Append(result)
+					result = nr
+				}
+			}
+
+			return result
+		} else if ast.IsSymbol() || ast.IsHashmap() {
+			nr := *NewList()
+			nr.Append(Type{Symbol: &quote})
+			nr.Append(ast)
+			return nr
+		}
+
+		return ast
+	}
+
+	return *NewNil()
+}
