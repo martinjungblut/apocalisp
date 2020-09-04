@@ -1,5 +1,9 @@
 package core
 
+func NewSymbol(s string) *Type {
+	return &Type{Symbol: &s}
+}
+
 func (node *Type) IsSymbol() bool {
 	return node.Symbol != nil
 }

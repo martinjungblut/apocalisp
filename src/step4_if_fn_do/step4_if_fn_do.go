@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	apocalisp.Repl(apocalisp.Step4Eval)
+	apocalisp.Repl(apocalisp.Evaluate)
 }
