@@ -79,6 +79,8 @@ func Step5Eval(node *core.Type, environment *core.Environment) (*core.Type, erro
 				if err := tcoSpecialFormQuasiquote(Step5Eval, rest, &node, &environment); err != nil {
 					return nil, err
 				}
+			} else if first.CompareSymbol("quasiquoteexpand") {
+				return specialFormQuasiquoteexpand(Step5Eval, rest, environment)
 			} else if container, err := evalAst(node, environment, Step5Eval); err != nil {
 				return nil, err
 			} else {
@@ -194,11 +196,19 @@ func tcoSpecialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, erro
 	}
 }
 
+func specialFormQuasiquoteexpand(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
+	if len(rest) >= 1 {
+		newNode := quasiquote(rest[0])
+		return &newNode, nil
+	}
+	return nil, errors.New("Error: Invalid syntax for `quasiquoteexpand`.")
+}
+
 func tcoSpecialFormQuasiquote(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) error {
 	if len(rest) < 1 {
-		errors.New("Error: Invalid syntax for `quasiquote`.")
+		return errors.New("Error: Invalid syntax for `quasiquote`.")
 	} else {
-		newNode := core.Quasiquote(rest[0])
+		newNode := quasiquote(rest[0])
 		*node = &newNode
 	}
 	return nil
@@ -272,4 +282,40 @@ func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Typ
 	}
 
 	return node, nil
+}
+
+func quasiquote(args ...core.Type) core.Type {
+	concat, cons, quote, vec := "concat", "cons", "quote", "vec"
+
+	if len(args) >= 1 {
+		ast := args[0]
+		iterable := ast.AsIterable()
+
+		if ast.IsVector() {
+			return *core.NewList(core.Type{Symbol: &vec}, quasiquote(*core.NewList(iterable...)))
+		} else if len(iterable) >= 2 && iterable[0].CompareSymbol("unquote") {
+			return iterable[1]
+		} else if len(iterable) >= 1 {
+			result := *core.NewList()
+
+			for i := len(iterable) - 1; i >= 0; i-- {
+				el := iterable[i]
+				eli := el.AsIterable()
+
+				if len(eli) >= 2 && eli[0].CompareSymbol("splice-unquote") {
+					result = *core.NewList(core.Type{Symbol: &concat}, eli[1], result)
+				} else {
+					result = *core.NewList(core.Type{Symbol: &cons}, quasiquote(el), result)
+				}
+			}
+
+			return result
+		} else if ast.IsSymbol() || ast.IsHashmap() {
+			return *core.NewList(core.Type{Symbol: &quote}, ast)
+		}
+
+		return ast
+	}
+
+	return *core.NewNil()
 }
