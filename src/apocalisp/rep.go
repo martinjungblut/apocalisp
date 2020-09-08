@@ -266,10 +266,13 @@ func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Typ
 
 func quasiquote(node core.Type) core.Type {
 	iterable := node.AsIterable()
+	unquoted := len(iterable) >= 2 && iterable[0].CompareSymbol("unquote")
 
-	if node.IsVector() {
+	if node.IsSymbol() || node.IsHashmap() || (node.IsVector() && unquoted) {
+		return *core.NewList(*core.NewSymbol("quote"), node)
+	} else if node.IsVector() {
 		return *core.NewList(*core.NewSymbol("vec"), quasiquote(*core.NewList(iterable...)))
-	} else if len(iterable) >= 2 && iterable[0].CompareSymbol("unquote") {
+	} else if unquoted {
 		return iterable[1]
 	} else if len(iterable) >= 1 {
 		result := *core.NewList()
@@ -277,7 +280,6 @@ func quasiquote(node core.Type) core.Type {
 		for i := len(iterable) - 1; i >= 0; i-- {
 			el := iterable[i]
 			eli := el.AsIterable()
-
 			if len(eli) >= 2 && eli[0].CompareSymbol("splice-unquote") {
 				result = *core.NewList(*core.NewSymbol("concat"), eli[1], result)
 			} else {
@@ -286,8 +288,6 @@ func quasiquote(node core.Type) core.Type {
 		}
 
 		return result
-	} else if node.IsSymbol() || node.IsHashmap() {
-		return *core.NewList(*core.NewSymbol("quote"), node)
 	}
 
 	return node
