@@ -49,31 +49,37 @@ func Repl(eval func(*core.Type, *core.Environment) (*core.Type, error)) {
 	})
 
 	argv := core.NewList()
-	for i, _ := range os.Args[1:] {
-		argv.Append(core.Type{String: &os.Args[i+1]})
+	for i := range os.Args {
+		if i > 1 {
+			argv.Append(core.Type{String: &os.Args[i]})
+		}
 	}
 	environment.Set("*ARGV*", *argv)
 
 	_, _ = Rep(`(def! not (fn* (a) (if a false true)))`, environment, eval)
 	_, _ = Rep(`(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))`, environment, eval)
 
-	// repl
-	fmt.Println("This is apocaLISP.")
-	for {
-		if sexpr, err := line.Prompt("user> "); err == nil {
-			line.AppendHistory(sexpr)
+	if len(os.Args) >= 2 {
+		_, _ = Rep(fmt.Sprintf(`(load-file "%s")`, os.Args[1]), environment, eval)
+	} else {
+		// repl
+		fmt.Println("This is apocaLISP.")
+		for {
+			if sexpr, err := line.Prompt("user> "); err == nil {
+				line.AppendHistory(sexpr)
 
-			output, err := Rep(sexpr, environment, eval)
-			if err == nil {
-				if len(output) > 0 {
-					fmt.Printf("%s\n", output)
+				output, err := Rep(sexpr, environment, eval)
+				if err == nil {
+					if len(output) > 0 {
+						fmt.Printf("%s\n", output)
+					}
+				} else {
+					fmt.Printf("%s\n", err.Error())
 				}
 			} else {
-				fmt.Printf("%s\n", err.Error())
+				fmt.Println("\nFarewell!")
+				break
 			}
-		} else {
-			fmt.Println("\nFarewell!")
-			break
 		}
 	}
 }
