@@ -384,5 +384,38 @@ func DefaultEnvironment(parser Parser) *Environment {
 		return vector
 	})
 
+	env.SetCallable("first", func(args ...Type) Type {
+		if len(args) >= 1 {
+			if it := args[0].AsIterable(); len(it) >= 1 {
+				return it[0]
+			}
+		}
+		return *NewNil()
+	})
+
+	env.SetCallable("rest", func(args ...Type) Type {
+		if len(args) >= 1 {
+			if it := args[0].AsIterable(); len(it) >= 2 {
+				return *NewList(it[1:]...)
+			}
+		}
+		return *NewList()
+	})
+
+	env.SetCallable("nth", func(args ...Type) Type {
+		if len(args) >= 2 {
+			if it, nth := args[0].AsIterable(), args[1].AsInteger(); args[1].IsInteger() {
+				// TODO: add test to ensure nth requires positive indexes
+				if nth < 0 || nth >= int64(len(it)) {
+					// TODO: exception should be thrown here
+					return *NewNil()
+				} else {
+					return it[nth]
+				}
+			}
+		}
+		return *NewNil()
+	})
+
 	return env
 }
