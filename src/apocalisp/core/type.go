@@ -8,18 +8,19 @@ import (
 )
 
 type Type struct {
-	Nil      bool
-	Boolean  *bool
-	Integer  *int64
-	Float    *float64
-	Symbol   *string
-	String   *string
-	List     *[]Type
-	Vector   *[]Type
-	Hashmap  *[]Type
-	Callable *(func(...Type) Type)
-	Function *Function
-	Atom     **Type
+	Nil       bool
+	Exception bool
+	Boolean   *bool
+	Integer   *int64
+	Float     *float64
+	Symbol    *string
+	String    *string
+	List      *[]Type
+	Vector    *[]Type
+	Hashmap   *[]Type
+	Callable  *(func(...Type) Type)
+	Function  *Function
+	Atom      **Type
 }
 
 func (node Type) ToString(readably bool) string {

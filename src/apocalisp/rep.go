@@ -32,68 +32,94 @@ func NoEval(node *core.Type, environment *core.Environment) (*core.Type, error) 
 }
 
 func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error) {
+	var lexicalReturnValue *core.Type
+	var lexicalError error
+	wrapReturn := func(node *core.Type, err error) {
+		if node != nil {
+			lexicalReturnValue = node
+		}
+		if err != nil {
+			lexicalError = err
+		}
+	}
+	processReturn := func() (*core.Type, error) {
+		if lexicalReturnValue != nil {
+			if message := lexicalReturnValue.ExceptionMessage(); message != nil {
+				return nil, errors.New(fmt.Sprintf("Exception: %s", *message))
+			} else {
+				return lexicalReturnValue, nil
+			}
+		}
+		if lexicalError != nil {
+			return nil, lexicalError
+		}
+		return nil, errors.New("Error: Unexpected behavior.")
+	}
+
 	// TCO loop
 	for {
+		if lexicalReturnValue != nil || lexicalError != nil {
+			return processReturn()
+		}
+
 		expanded := macroexpand(*node, *environment)
 		node = &expanded
 
 		if !node.IsList() {
 			if evaluated, err := evalAst(node, environment, Evaluate); err != nil {
-				return nil, err
+				wrapReturn(nil, err)
 			} else {
-				return evaluated, nil
+				wrapReturn(evaluated, nil)
 			}
 		} else if node.IsEmptyList() {
-			return node, nil
+			wrapReturn(node, nil)
 		} else if node.IsList() {
 			first, rest := node.AsIterable()[0], node.AsIterable()[1:]
 
 			if first.CompareSymbol("def!") {
-				return specialFormDef(Evaluate, rest, environment)
+				wrapReturn(specialFormDef(Evaluate, rest, environment))
 			} else if first.CompareSymbol("defmacro!") {
-				return specialFormDefmacro(Evaluate, rest, environment)
+				wrapReturn(specialFormDefmacro(Evaluate, rest, environment))
 			} else if first.CompareSymbol("macroexpand") {
 				expanded := macroexpand(rest[0], *environment)
-				return &expanded, nil
+				wrapReturn(&expanded, nil)
 			} else if first.CompareSymbol("let*") {
 				if err := tcoSpecialFormLet(Evaluate, rest, &node, &environment); err != nil {
-					return nil, err
+					wrapReturn(nil, err)
 				}
 			} else if first.CompareSymbol("do") {
 				if err := tcoSpecialFormDo(Evaluate, rest, &node, &environment); err != nil {
-					return nil, err
+					wrapReturn(nil, err)
 				}
 			} else if first.CompareSymbol("fn*", `\`) {
-				return tcoSpecialFormFn(Evaluate, rest, &node, &environment)
+				wrapReturn(tcoSpecialFormFn(Evaluate, rest, &node, &environment))
 			} else if first.CompareSymbol("if") {
 				if err := tcoSpecialFormIf(Evaluate, rest, &node, &environment); err != nil {
-					return nil, err
+					wrapReturn(nil, err)
 				}
 			} else if first.CompareSymbol("quasiquote") {
 				if err := tcoSpecialFormQuasiquote(Evaluate, rest, &node, &environment); err != nil {
-					return nil, err
+					wrapReturn(nil, err)
 				}
 			} else if first.CompareSymbol("quasiquoteexpand") {
-				return specialFormQuasiquoteexpand(Evaluate, rest, environment)
+				wrapReturn(specialFormQuasiquoteexpand(Evaluate, rest, environment))
 			} else if first.CompareSymbol("quote") {
-				return specialFormQuote(Evaluate, rest, environment)
+				wrapReturn(specialFormQuote(Evaluate, rest, environment))
 			} else if container, err := evalAst(node, environment, Evaluate); err != nil {
-				return nil, err
+				wrapReturn(nil, err)
 			} else {
 				first, rest := container.AsIterable()[0], container.AsIterable()[1:]
 				if first.IsFunction() {
 					node = &first.Function.Body
 					environment = core.NewEnvironment(&first.Function.Environment, first.Function.Params, rest)
 				} else {
-					return evalCallable(container)
+					wrapReturn(evalCallable(container))
 				}
 			}
 		} else {
-			break
+			return processReturn()
 		}
 	}
-
-	return nil, errors.New("Error: Unexpected behavior.")
 }
 
 func tcoSpecialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) error {
