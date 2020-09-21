@@ -58,6 +58,7 @@ func Repl(eval func(*core.Type, *core.Environment) (*core.Type, error)) {
 
 	_, _ = Rep(`(def! not (fn* (a) (if a false true)))`, environment, eval)
 	_, _ = Rep(`(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))`, environment, eval)
+	_, _ = Rep(`(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw "odd number of forms to cond")) (cons 'cond (rest (rest xs)))))))`, environment, eval)
 
 	if len(os.Args) >= 2 {
 		_, _ = Rep(fmt.Sprintf(`(load-file "%s")`, os.Args[1]), environment, eval)

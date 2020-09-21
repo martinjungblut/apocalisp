@@ -34,6 +34,9 @@ func NoEval(node *core.Type, environment *core.Environment) (*core.Type, error) 
 func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error) {
 	// TCO loop
 	for {
+		expanded := macroexpand(*node, *environment)
+		node = &expanded
+
 		if !node.IsList() {
 			if evaluated, err := evalAst(node, environment, Evaluate); err != nil {
 				return nil, err
@@ -47,6 +50,11 @@ func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error
 
 			if first.CompareSymbol("def!") {
 				return specialFormDef(Evaluate, rest, environment)
+			} else if first.CompareSymbol("defmacro!") {
+				return specialFormDefmacro(Evaluate, rest, environment)
+			} else if first.CompareSymbol("macroexpand") {
+				expanded := macroexpand(rest[0], *environment)
+				return &expanded, nil
 			} else if first.CompareSymbol("let*") {
 				if err := tcoSpecialFormLet(Evaluate, rest, &node, &environment); err != nil {
 					return nil, err
@@ -215,6 +223,22 @@ func specialFormDef(eval func(*core.Type, *core.Environment) (*core.Type, error)
 	}
 }
 
+func specialFormDefmacro(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
+	if len(rest) != 2 || !rest[0].IsSymbol() {
+		return nil, errors.New("Error: Invalid syntax for `def!`.")
+	} else {
+		if e, ierr := eval(&rest[1], environment); ierr == nil {
+			if e.IsFunction() {
+				e.Function.IsMacro = true
+			}
+			environment.Set(rest[0].AsSymbol(), *e)
+			return e, nil
+		} else {
+			return nil, ierr
+		}
+	}
+}
+
 func evalCallable(node *core.Type) (*core.Type, error) {
 	first, rest := node.AsIterable()[0], node.AsIterable()[1:]
 
@@ -288,6 +312,32 @@ func quasiquote(node core.Type) core.Type {
 		}
 
 		return result
+	}
+
+	return node
+}
+
+func isMacroCall(node core.Type, environment core.Environment, capture func(core.Type)) bool {
+	if iterable := node.AsIterable(); node.IsList() && len(iterable) >= 1 {
+		if first := iterable[0]; first.IsSymbol() {
+			if macro, err := environment.Get(first.AsSymbol()); err == nil && macro.IsMacroFunction() {
+				capture(macro)
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func macroexpand(node core.Type, environment core.Environment) core.Type {
+	var macro core.Type
+	capture := func(m core.Type) {
+		macro = m
+	}
+
+	for isMacroCall(node, environment, capture) {
+		parameters := node.AsIterable()[1:]
+		node = macro.CallFunction(parameters...)
 	}
 
 	return node
