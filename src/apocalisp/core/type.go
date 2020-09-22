@@ -17,7 +17,7 @@ type Type struct {
 	String    *string
 	List      *[]Type
 	Vector    *[]Type
-	Hashmap   *[]Type
+	Hashmap   *map[Type]Type
 	Callable  *(func(...Type) Type)
 	Function  *Function
 	Atom      **Type
@@ -32,6 +32,15 @@ func (node Type) ToString(readably bool) string {
 			}
 		}
 		return fmt.Sprintf("%s%s%s", lWrap, strings.Join(tokens, " "), rWrap)
+	}
+
+	hashmapToSequence := func(node Type) *[]Type {
+		sequence := make([]Type, 0)
+		for key, value := range node.AsHashmap() {
+			sequence = append(sequence, key)
+			sequence = append(sequence, value)
+		}
+		return &sequence
 	}
 
 	formatString := func(input string) string {
@@ -60,7 +69,7 @@ func (node Type) ToString(readably bool) string {
 	} else if node.IsVector() {
 		return formatSequence(node.Vector, "[", "]")
 	} else if node.IsHashmap() {
-		return formatSequence(node.Hashmap, "{", "}")
+		return formatSequence(hashmapToSequence(node), "{", "}")
 	} else if node.IsAtom() {
 		return fmt.Sprintf("(atom %s)", node.AsAtom().ToString(readably))
 	} else if node.IsException() {

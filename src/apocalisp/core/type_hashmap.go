@@ -1,15 +1,25 @@
 package core
 
 func NewHashmap() *Type {
-	l := make([]Type, 0)
-	return &Type{Hashmap: &l}
+	m := make(map[Type]Type)
+	return &Type{Hashmap: &m}
 }
 
-func (node *Type) AddToHashmap(t Type) {
-	*node.Hashmap = append(*node.Hashmap, t)
+func NewHashmapFromSequence(sequence []Type) *Type {
+	m := make(map[Type]Type)
+
+	for i := 0; i < len(sequence) && i+1 < len(sequence); i += 2 {
+		m[sequence[i]] = sequence[i+1]
+	}
+
+	return &Type{Hashmap: &m}
 }
 
-func (node *Type) AsHashmap() []Type {
+func (node *Type) HashmapSet(key Type, value Type) {
+	node.AsHashmap()[key] = value
+}
+
+func (node *Type) AsHashmap() map[Type]Type {
 	return *node.Hashmap
 }
 

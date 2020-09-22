@@ -298,14 +298,12 @@ func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Typ
 	}
 
 	if node.IsHashmap() {
-		currentHashmap := node.AsHashmap()
-		newHashmap := core.NewHashmap()
-		for i, j := 0, 1; i < len(currentHashmap); i, j = i+2, j+2 {
-			newHashmap.AddToHashmap(currentHashmap[i])
-			if evaluated, err := eval(&(currentHashmap[j]), environment); err != nil {
+		currentHashmap, newHashmap := node.AsHashmap(), core.NewHashmap()
+		for key, value := range currentHashmap {
+			if evaluated, err := eval(&value, environment); err != nil {
 				return nil, err
 			} else {
-				newHashmap.AddToHashmap(*evaluated)
+				newHashmap.HashmapSet(key, *evaluated)
 			}
 		}
 		return newHashmap, nil

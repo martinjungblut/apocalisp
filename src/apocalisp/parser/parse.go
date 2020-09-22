@@ -128,7 +128,7 @@ func readHashmap(reader *reader) (*core.Type, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		return &core.Type{Hashmap: sequence}, nil
+		return core.NewHashmapFromSequence(*sequence), nil
 	}
 }
 

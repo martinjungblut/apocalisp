@@ -47,3 +47,15 @@ func Test_AsString_Returns_Empty_String_If_Not_String(t *testing.T) {
 		t.Error("AsString() failed.")
 	}
 }
+
+func Test_NewString(t *testing.T) {
+	first, second := NewString("first"), NewString("second")
+
+	if first.AsString() != "first" {
+		t.Error("NewString() failed.")
+	}
+
+	if second.AsString() != "second" {
+		t.Error("NewString() failed.")
+	}
+}

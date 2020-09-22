@@ -11,3 +11,7 @@ func (node *Type) AsString() string {
 		return ""
 	}
 }
+
+func NewString(content string) *Type {
+	return &Type{String: &content}
+}
