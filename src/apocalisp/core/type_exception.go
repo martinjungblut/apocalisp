@@ -1,30 +1,17 @@
 package core
 
-func NewException() *Type {
-	tslice := make([]Type, 0)
-	node := Type{Exception: true, Hashmap: &tslice}
-	return &node
+func NewException(exception Type) *Type {
+	return &Type{Exception: &exception}
+}
+
+func NewStringException(message string) *Type {
+	return &Type{Exception: &Type{String: &message}}
 }
 
 func (node *Type) IsException() bool {
-	return node.Exception
+	return node.Exception != nil
 }
 
-func (node *Type) SetExceptionMessage(message string) {
-	key := "message"
-	node.AddToHashmap(Type{String: &key})
-	node.AddToHashmap(Type{String: &message})
-}
-
-func (node *Type) ExceptionMessage() *string {
-	if node.IsException() {
-		hashmap := node.AsHashmap()
-		for i := 0; i <= len(hashmap); i += 2 {
-			if hashmap[i].AsString() == "message" {
-				s := hashmap[i+1].AsString()
-				return &s
-			}
-		}
-	}
-	return nil
+func (node *Type) AsException() Type {
+	return *node.Exception
 }

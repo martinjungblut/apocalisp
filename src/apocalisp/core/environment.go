@@ -406,9 +406,7 @@ func DefaultEnvironment(parser Parser) *Environment {
 			if it, nth := args[0].AsIterable(), args[1].AsInteger(); args[1].IsInteger() {
 				// TODO: add test to ensure nth requires positive indexes
 				if nth < 0 || nth >= int64(len(it)) {
-					exception := *NewException()
-					exception.SetExceptionMessage(fmt.Sprintf("Invalid index '%d' for iterable of length '%d'.", nth, len(it)))
-					return exception
+					return *NewStringException(fmt.Sprintf("Invalid index '%d' for iterable of length '%d'.", nth, len(it)))
 				} else {
 					return it[nth]
 				}

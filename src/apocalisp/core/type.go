@@ -9,7 +9,7 @@ import (
 
 type Type struct {
 	Nil       bool
-	Exception bool
+	Exception *Type
 	Boolean   *bool
 	Integer   *int64
 	Float     *float64
@@ -63,6 +63,8 @@ func (node Type) ToString(readably bool) string {
 		return formatSequence(node.Hashmap, "{", "}")
 	} else if node.IsAtom() {
 		return fmt.Sprintf("(atom %s)", node.AsAtom().ToString(readably))
+	} else if node.IsException() {
+		return fmt.Sprintf("Exception: %s", node.AsException().ToString(readably))
 	}
 	return ""
 }

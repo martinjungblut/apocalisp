@@ -44,8 +44,8 @@ func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error
 	}
 	processReturn := func() (*core.Type, error) {
 		if lexicalReturnValue != nil {
-			if message := lexicalReturnValue.ExceptionMessage(); message != nil {
-				return nil, errors.New(fmt.Sprintf("Exception: %s", *message))
+			if lexicalReturnValue.IsException() {
+				return nil, errors.New(lexicalReturnValue.ToString(false))
 			} else {
 				return lexicalReturnValue, nil
 			}
