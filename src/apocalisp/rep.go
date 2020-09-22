@@ -84,36 +84,30 @@ func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error
 				expanded := macroexpand(rest[0], *environment)
 				wrapReturn(&expanded, nil)
 			} else if first.CompareSymbol("let*") {
-				if err := tcoSpecialFormLet(Evaluate, rest, &node, &environment); err != nil {
-					wrapReturn(nil, err)
-				}
+				wrapReturn(tcoSpecialFormLet(Evaluate, rest, &node, &environment))
 			} else if first.CompareSymbol("do") {
-				if err := tcoSpecialFormDo(Evaluate, rest, &node, &environment); err != nil {
-					wrapReturn(nil, err)
-				}
+				wrapReturn(tcoSpecialFormDo(Evaluate, rest, &node, &environment))
 			} else if first.CompareSymbol("fn*", `\`) {
 				wrapReturn(tcoSpecialFormFn(Evaluate, rest, &node, &environment))
 			} else if first.CompareSymbol("if") {
-				if err := tcoSpecialFormIf(Evaluate, rest, &node, &environment); err != nil {
-					wrapReturn(nil, err)
-				}
+				wrapReturn(tcoSpecialFormIf(Evaluate, rest, &node, &environment))
 			} else if first.CompareSymbol("quasiquote") {
-				if err := tcoSpecialFormQuasiquote(Evaluate, rest, &node, &environment); err != nil {
-					wrapReturn(nil, err)
-				}
+				wrapReturn(tcoSpecialFormQuasiquote(Evaluate, rest, &node, &environment))
 			} else if first.CompareSymbol("quasiquoteexpand") {
 				wrapReturn(specialFormQuasiquoteexpand(Evaluate, rest, environment))
 			} else if first.CompareSymbol("quote") {
 				wrapReturn(specialFormQuote(Evaluate, rest, environment))
-			} else if container, err := evalAst(node, environment, Evaluate); err != nil {
-				wrapReturn(nil, err)
 			} else {
-				first, rest := container.AsIterable()[0], container.AsIterable()[1:]
-				if first.IsFunction() {
-					node = &first.Function.Body
-					environment = core.NewEnvironment(&first.Function.Environment, first.Function.Params, rest)
+				if container, err := evalAst(node, environment, Evaluate); err != nil {
+					wrapReturn(nil, err)
 				} else {
-					wrapReturn(evalCallable(container))
+					function, parameters := container.AsIterable()[0], container.AsIterable()[1:]
+					if function.IsFunction() {
+						node = &function.Function.Body
+						environment = core.NewEnvironment(&function.Function.Environment, function.Function.Params, parameters)
+					} else {
+						wrapReturn(evalCallable(container))
+					}
 				}
 			}
 		} else {
@@ -122,9 +116,9 @@ func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error
 	}
 }
 
-func tcoSpecialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) error {
+func tcoSpecialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
 	if len(rest) != 2 || !rest[0].IsEvenIterable() {
-		return errors.New("Error: Invalid syntax for `let*`.")
+		return nil, errors.New("Error: Invalid syntax for `let*`.")
 	} else {
 		letEnvironment := core.NewEnvironment(*environment, []string{}, []core.Type{})
 
@@ -134,37 +128,37 @@ func tcoSpecialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, err
 			if e, ierr := eval(&bindings[j], letEnvironment); ierr == nil {
 				letEnvironment.Set(s, *e)
 			} else {
-				return ierr
+				return nil, ierr
 			}
 		}
 
 		*environment = letEnvironment
 		*node = &rest[1]
-		return nil
+		return nil, nil
 	}
 }
 
-func tcoSpecialFormDo(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) error {
+func tcoSpecialFormDo(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
 	if len(rest) < 1 {
-		return errors.New("Error: Invalid syntax for `do`.")
+		return nil, errors.New("Error: Invalid syntax for `do`.")
 	} else {
 		toEvaluate := rest[:len(rest)-1]
 		if _, err := evalAst(&core.Type{List: &toEvaluate}, *environment, eval); err != nil {
-			return err
+			return nil, err
 		} else {
 			*node = &rest[len(rest)-1]
-			return nil
+			return nil, nil
 		}
 	}
 }
 
-func tcoSpecialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) error {
+func tcoSpecialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
 	length := len(rest)
 
 	if length < 2 || length > 3 {
-		return errors.New("Error: Invalid syntax for `if`.")
+		return nil, errors.New("Error: Invalid syntax for `if`.")
 	} else if condition, err := eval(&rest[0], *environment); err != nil {
-		return err
+		return nil, err
 	} else if !condition.IsNil() && !condition.CompareBoolean(false) {
 		*node = &rest[1]
 	} else if length == 3 {
@@ -173,7 +167,7 @@ func tcoSpecialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, erro
 		*node = core.NewNil()
 	}
 
-	return nil
+	return nil, nil
 }
 
 func tcoSpecialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
@@ -210,14 +204,14 @@ func tcoSpecialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, erro
 	}
 }
 
-func tcoSpecialFormQuasiquote(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) error {
+func tcoSpecialFormQuasiquote(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
 	if len(rest) < 1 {
-		return errors.New("Error: Invalid syntax for `quasiquote`.")
+		return nil, errors.New("Error: Invalid syntax for `quasiquote`.")
 	} else {
 		newNode := quasiquote(rest[0])
 		*node = &newNode
 	}
-	return nil
+	return nil, nil
 }
 
 func specialFormQuote(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {

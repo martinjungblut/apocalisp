@@ -52,6 +52,8 @@ func (node Type) ToString(readably bool) string {
 
 	if node.IsNil() {
 		return "nil"
+	} else if node.IsException() {
+		return fmt.Sprintf("Exception: %s", node.AsException().ToString(readably))
 	} else if node.IsBoolean() {
 		return strconv.FormatBool(node.AsBoolean())
 	} else if node.IsInteger() {
@@ -72,8 +74,6 @@ func (node Type) ToString(readably bool) string {
 		return formatSequence(hashmapToSequence(node), "{", "}")
 	} else if node.IsAtom() {
 		return fmt.Sprintf("(atom %s)", node.AsAtom().ToString(readably))
-	} else if node.IsException() {
-		return fmt.Sprintf("Exception: %s", node.AsException().ToString(readably))
 	}
 	return ""
 }
@@ -121,12 +121,10 @@ func compareIterables(firstList []Type, secondList []Type) bool {
 		return true
 	}
 
-	result := true
 	for index, _ := range firstList {
 		if !compare(firstList[index], secondList[index]) {
-			result = false
-			break
+			return false
 		}
 	}
-	return result
+	return true
 }
