@@ -7,10 +7,9 @@ import (
 )
 
 func Repl_Test(in string, eout string, t *testing.T) {
-	eval := Step6Eval
 	environment := core.DefaultEnvironment(parser.Parser{})
 
-	if out, err := Rep(in, environment, eval); err != nil && err.Error() != eout {
+	if out, err := Rep(in, environment, Evaluate); err != nil && err.Error() != eout {
 		t.Errorf("(output) `%s` != `%s` (expected)", err.Error(), eout)
 	} else if out != eout {
 		t.Errorf("(output) `%s` != `%s` (expected)", out, eout)
