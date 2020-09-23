@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func Rep(sexpr string, environment *core.Environment, eval func(*core.Type, *core.Environment) (*core.Type, error)) (string, error) {
+func Rep(sexpr string, environment *core.Environment, eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) (string, error) {
 	// read
 	t, err := parser.Parse(sexpr)
 	if err != nil {
@@ -18,7 +18,7 @@ func Rep(sexpr string, environment *core.Environment, eval func(*core.Type, *cor
 	}
 
 	// eval
-	evaluated, err := eval(t, environment)
+	evaluated, err := eval(t, environment, true)
 	if err != nil {
 		return "", err
 	}
@@ -27,13 +27,15 @@ func Rep(sexpr string, environment *core.Environment, eval func(*core.Type, *cor
 	return evaluated.ToString(true), nil
 }
 
-func NoEval(node *core.Type, environment *core.Environment) (*core.Type, error) {
+func NoEval(node *core.Type, environment *core.Environment, convertExceptions bool) (*core.Type, error) {
 	return node, nil
 }
 
-func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error) {
-	var lexicalReturnValue *core.Type
-	var lexicalError error
+func Evaluate(node *core.Type, environment *core.Environment, convertExceptions bool) (*core.Type, error) {
+	var (
+		lexicalReturnValue *core.Type
+		lexicalError       error
+	)
 	wrapReturn := func(node *core.Type, err error) {
 		if node != nil {
 			lexicalReturnValue = node
@@ -44,7 +46,7 @@ func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error
 	}
 	processReturn := func() (*core.Type, error) {
 		if lexicalReturnValue != nil {
-			if lexicalReturnValue.IsException() {
+			if lexicalReturnValue.IsException() && convertExceptions {
 				return nil, errors.New(lexicalReturnValue.ToString(false))
 			} else {
 				return lexicalReturnValue, nil
@@ -66,7 +68,7 @@ func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error
 		node = &expanded
 
 		if !node.IsList() {
-			if evaluated, err := evalAst(node, environment, Evaluate); err != nil {
+			if evaluated, err := evalAst(node, environment, Evaluate, convertExceptions); err != nil {
 				wrapReturn(nil, err)
 			} else {
 				wrapReturn(evaluated, nil)
@@ -77,28 +79,30 @@ func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error
 			first, rest := node.AsIterable()[0], node.AsIterable()[1:]
 
 			if first.CompareSymbol("def!") {
-				wrapReturn(specialFormDef(Evaluate, rest, environment))
+				wrapReturn(specialFormDef(Evaluate, rest, environment, convertExceptions))
 			} else if first.CompareSymbol("defmacro!") {
-				wrapReturn(specialFormDefmacro(Evaluate, rest, environment))
+				wrapReturn(specialFormDefmacro(Evaluate, rest, environment, convertExceptions))
 			} else if first.CompareSymbol("macroexpand") {
 				expanded := macroexpand(rest[0], *environment)
 				wrapReturn(&expanded, nil)
 			} else if first.CompareSymbol("let*") {
-				wrapReturn(tcoSpecialFormLet(Evaluate, rest, &node, &environment))
+				wrapReturn(tcoSpecialFormLet(Evaluate, rest, &node, &environment, convertExceptions))
 			} else if first.CompareSymbol("do") {
-				wrapReturn(tcoSpecialFormDo(Evaluate, rest, &node, &environment))
+				wrapReturn(tcoSpecialFormDo(Evaluate, rest, &node, &environment, convertExceptions))
 			} else if first.CompareSymbol("fn*", `\`) {
-				wrapReturn(tcoSpecialFormFn(Evaluate, rest, &node, &environment))
+				wrapReturn(tcoSpecialFormFn(Evaluate, rest, &node, &environment, convertExceptions))
 			} else if first.CompareSymbol("if") {
-				wrapReturn(tcoSpecialFormIf(Evaluate, rest, &node, &environment))
+				wrapReturn(tcoSpecialFormIf(Evaluate, rest, &node, &environment, convertExceptions))
 			} else if first.CompareSymbol("quasiquote") {
-				wrapReturn(tcoSpecialFormQuasiquote(Evaluate, rest, &node, &environment))
+				wrapReturn(tcoSpecialFormQuasiquote(Evaluate, rest, &node, &environment, convertExceptions))
 			} else if first.CompareSymbol("quasiquoteexpand") {
-				wrapReturn(specialFormQuasiquoteexpand(Evaluate, rest, environment))
+				wrapReturn(specialFormQuasiquoteexpand(Evaluate, rest, environment, convertExceptions))
 			} else if first.CompareSymbol("quote") {
-				wrapReturn(specialFormQuote(Evaluate, rest, environment))
+				wrapReturn(specialFormQuote(Evaluate, rest, environment, convertExceptions))
+			} else if first.CompareSymbol("try*") {
+				wrapReturn(specialFormTryCatch(Evaluate, rest, environment, convertExceptions))
 			} else {
-				if container, err := evalAst(node, environment, Evaluate); err != nil {
+				if container, err := evalAst(node, environment, Evaluate, convertExceptions); err != nil {
 					wrapReturn(nil, err)
 				} else {
 					function, parameters := container.AsIterable()[0], container.AsIterable()[1:]
@@ -116,7 +120,7 @@ func Evaluate(node *core.Type, environment *core.Environment) (*core.Type, error
 	}
 }
 
-func tcoSpecialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
+func tcoSpecialFormLet(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment, convertExceptions bool) (*core.Type, error) {
 	if len(rest) != 2 || !rest[0].IsEvenIterable() {
 		return nil, errors.New("Error: Invalid syntax for `let*`.")
 	} else {
@@ -125,7 +129,7 @@ func tcoSpecialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, err
 		bindings := rest[0].AsIterable()
 		for i, j := 0, 1; i < len(bindings); i, j = i+2, j+2 {
 			s := bindings[i].ToString(true)
-			if e, ierr := eval(&bindings[j], letEnvironment); ierr == nil {
+			if e, ierr := eval(&bindings[j], letEnvironment, convertExceptions); ierr == nil {
 				letEnvironment.Set(s, *e)
 			} else {
 				return nil, ierr
@@ -138,12 +142,12 @@ func tcoSpecialFormLet(eval func(*core.Type, *core.Environment) (*core.Type, err
 	}
 }
 
-func tcoSpecialFormDo(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
+func tcoSpecialFormDo(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment, convertExceptions bool) (*core.Type, error) {
 	if len(rest) < 1 {
 		return nil, errors.New("Error: Invalid syntax for `do`.")
 	} else {
 		toEvaluate := rest[:len(rest)-1]
-		if _, err := evalAst(&core.Type{List: &toEvaluate}, *environment, eval); err != nil {
+		if _, err := evalAst(&core.Type{List: &toEvaluate}, *environment, eval, convertExceptions); err != nil {
 			return nil, err
 		} else {
 			*node = &rest[len(rest)-1]
@@ -152,12 +156,12 @@ func tcoSpecialFormDo(eval func(*core.Type, *core.Environment) (*core.Type, erro
 	}
 }
 
-func tcoSpecialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
+func tcoSpecialFormIf(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment, convertExceptions bool) (*core.Type, error) {
 	length := len(rest)
 
 	if length < 2 || length > 3 {
 		return nil, errors.New("Error: Invalid syntax for `if`.")
-	} else if condition, err := eval(&rest[0], *environment); err != nil {
+	} else if condition, err := eval(&rest[0], *environment, convertExceptions); err != nil {
 		return nil, err
 	} else if !condition.IsNil() && !condition.CompareBoolean(false) {
 		*node = &rest[1]
@@ -170,7 +174,7 @@ func tcoSpecialFormIf(eval func(*core.Type, *core.Environment) (*core.Type, erro
 	return nil, nil
 }
 
-func tcoSpecialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
+func tcoSpecialFormFn(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment, convertExceptions bool) (*core.Type, error) {
 	if len(rest) < 2 || !rest[0].IsIterable() {
 		return nil, errors.New("Error: Invalid syntax for `fn*`.")
 	} else {
@@ -185,7 +189,7 @@ func tcoSpecialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, erro
 
 		callable := func(args ...core.Type) core.Type {
 			newEnvironment := core.NewEnvironment(*environment, symbols, args)
-			if result, err := eval(&rest[1], newEnvironment); err != nil {
+			if result, err := eval(&rest[1], newEnvironment, convertExceptions); err != nil {
 				errorMessage := err.Error()
 				return core.Type{String: &errorMessage}
 			} else {
@@ -204,7 +208,7 @@ func tcoSpecialFormFn(eval func(*core.Type, *core.Environment) (*core.Type, erro
 	}
 }
 
-func tcoSpecialFormQuasiquote(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment) (*core.Type, error) {
+func tcoSpecialFormQuasiquote(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), rest []core.Type, node **core.Type, environment **core.Environment, convertExceptions bool) (*core.Type, error) {
 	if len(rest) < 1 {
 		return nil, errors.New("Error: Invalid syntax for `quasiquote`.")
 	} else {
@@ -214,7 +218,7 @@ func tcoSpecialFormQuasiquote(eval func(*core.Type, *core.Environment) (*core.Ty
 	return nil, nil
 }
 
-func specialFormQuote(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
+func specialFormQuote(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), rest []core.Type, environment *core.Environment, convertExceptions bool) (*core.Type, error) {
 	if len(rest) < 1 {
 		return nil, errors.New("Error: Invalid syntax for `quote`.")
 	} else {
@@ -222,7 +226,7 @@ func specialFormQuote(eval func(*core.Type, *core.Environment) (*core.Type, erro
 	}
 }
 
-func specialFormQuasiquoteexpand(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
+func specialFormQuasiquoteexpand(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), rest []core.Type, environment *core.Environment, convertExceptions bool) (*core.Type, error) {
 	if len(rest) >= 1 {
 		newNode := quasiquote(rest[0])
 		return &newNode, nil
@@ -230,11 +234,11 @@ func specialFormQuasiquoteexpand(eval func(*core.Type, *core.Environment) (*core
 	return nil, errors.New("Error: Invalid syntax for `quasiquoteexpand`.")
 }
 
-func specialFormDef(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
+func specialFormDef(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), rest []core.Type, environment *core.Environment, convertExceptions bool) (*core.Type, error) {
 	if len(rest) != 2 || !rest[0].IsSymbol() {
 		return nil, errors.New("Error: Invalid syntax for `def!`.")
 	} else {
-		if e, ierr := eval(&rest[1], environment); ierr == nil {
+		if e, ierr := eval(&rest[1], environment, convertExceptions); ierr == nil {
 			environment.Set(rest[0].AsSymbol(), *e)
 			return e, nil
 		} else {
@@ -243,11 +247,11 @@ func specialFormDef(eval func(*core.Type, *core.Environment) (*core.Type, error)
 	}
 }
 
-func specialFormDefmacro(eval func(*core.Type, *core.Environment) (*core.Type, error), rest []core.Type, environment *core.Environment) (*core.Type, error) {
+func specialFormDefmacro(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), rest []core.Type, environment *core.Environment, convertExceptions bool) (*core.Type, error) {
 	if len(rest) != 2 || !rest[0].IsSymbol() {
 		return nil, errors.New("Error: Invalid syntax for `def!`.")
 	} else {
-		if e, ierr := eval(&rest[1], environment); ierr == nil {
+		if e, ierr := eval(&rest[1], environment, convertExceptions); ierr == nil {
 			if e.IsFunction() {
 				e.Function.IsMacro = true
 			}
@@ -255,6 +259,28 @@ func specialFormDefmacro(eval func(*core.Type, *core.Environment) (*core.Type, e
 			return e, nil
 		} else {
 			return nil, ierr
+		}
+	}
+}
+
+func specialFormTryCatch(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), rest []core.Type, environment *core.Environment, convertExceptions bool) (*core.Type, error) {
+	if len(rest) < 1 {
+		return nil, errors.New("Error: Invalid syntax for `try*!`.")
+	}
+
+	if e, err := eval(&rest[0], environment, false); err != nil {
+		return nil, err
+	} else {
+		if len(rest) >= 2 {
+			catchexp := rest[1].AsIterable()
+			if e.IsException() && len(catchexp) == 3 && catchexp[0].CompareSymbol("catch*") && catchexp[1].IsSymbol() {
+				symbol, body := catchexp[1].AsSymbol(), catchexp[2]
+				return eval(&body, core.NewEnvironment(environment, []string{symbol}, []core.Type{*e}), convertExceptions)
+			} else {
+				return e, nil
+			}
+		} else {
+			return e, nil
 		}
 	}
 }
@@ -270,7 +296,7 @@ func evalCallable(node *core.Type) (*core.Type, error) {
 	}
 }
 
-func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Type, *core.Environment) (*core.Type, error)) (*core.Type, error) {
+func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Type, *core.Environment, bool) (*core.Type, error), convertExceptions bool) (*core.Type, error) {
 	if node.IsSymbol() && !strings.HasPrefix(node.AsSymbol(), ":") {
 		if t, err := environment.Get(node.AsSymbol()); err != nil {
 			return nil, err
@@ -282,7 +308,7 @@ func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Typ
 	if node.IsIterable() {
 		newIterable := node.DeriveIterable()
 		for _, element := range node.AsIterable() {
-			if evaluated, err := eval(&element, environment); err != nil {
+			if evaluated, err := eval(&element, environment, convertExceptions); err != nil {
 				return nil, err
 			} else {
 				newIterable.Append(*evaluated)
@@ -294,7 +320,7 @@ func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Typ
 	if node.IsHashmap() {
 		currentHashmap, newHashmap := node.AsHashmap(), core.NewHashmap()
 		for key, value := range currentHashmap {
-			if evaluated, err := eval(&value, environment); err != nil {
+			if evaluated, err := eval(&value, environment, convertExceptions); err != nil {
 				return nil, err
 			} else {
 				newHashmap.HashmapSet(key, *evaluated)

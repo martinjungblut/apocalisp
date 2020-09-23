@@ -9,7 +9,7 @@ import (
 	"runtime/debug"
 )
 
-func Repl(eval func(*core.Type, *core.Environment) (*core.Type, error)) {
+func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) {
 	// decrease max stack size to make TCO-related tests useful
 	debug.SetMaxStack(1 * 1024 * 1024)
 
@@ -41,7 +41,7 @@ func Repl(eval func(*core.Type, *core.Environment) (*core.Type, error)) {
 	environment.SetCallable("eval", func(args ...core.Type) core.Type {
 		if len(args) >= 1 {
 			node := args[0]
-			if r, err := eval(&node, environment); err == nil {
+			if r, err := eval(&node, environment, true); err == nil {
 				return *r
 			}
 		}

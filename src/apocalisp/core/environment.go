@@ -415,5 +415,12 @@ func DefaultEnvironment(parser Parser) *Environment {
 		return *NewNil()
 	})
 
+	env.SetCallable("throw", func(args ...Type) Type {
+		if len(args) >= 1 {
+			return *NewException(args[0])
+		}
+		return *NewNil()
+	})
+
 	return env
 }
