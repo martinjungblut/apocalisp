@@ -1,7 +1,6 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -51,7 +50,7 @@ func (env *Environment) SetCallable(symbol string, callable func(...Type) Type) 
 }
 
 func (env *Environment) Find(symbol string) *Environment {
-	for key, _ := range env.table {
+	for key := range env.table {
 		if key == symbol {
 			return env
 		}
@@ -72,7 +71,7 @@ func (env *Environment) Get(symbol string) (Type, error) {
 			}
 		}
 	}
-	return Type{}, errors.New(fmt.Sprintf("Error: '%s' not found.", symbol))
+	return *NewStringException(fmt.Sprintf("'%s' not found", symbol)), nil
 }
 
 func DefaultEnvironment(parser Parser) *Environment {

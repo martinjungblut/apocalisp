@@ -37,16 +37,7 @@ func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) {
 	}()
 
 	// environment
-	environment := DefaultEnvironment()
-	environment.SetCallable("eval", func(args ...core.Type) core.Type {
-		if len(args) >= 1 {
-			node := args[0]
-			if r, err := eval(&node, environment, true); err == nil {
-				return *r
-			}
-		}
-		return *core.NewNil()
-	})
+	environment := DefaultEnvironment(eval)
 
 	argv := core.NewList()
 	for i := range os.Args {

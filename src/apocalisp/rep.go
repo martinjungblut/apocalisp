@@ -275,7 +275,7 @@ func specialFormTryCatch(eval func(*core.Type, *core.Environment, bool) (*core.T
 			catchexp := rest[1].AsIterable()
 			if e.IsException() && len(catchexp) == 3 && catchexp[0].CompareSymbol("catch*") && catchexp[1].IsSymbol() {
 				symbol, body := catchexp[1].AsSymbol(), catchexp[2]
-				return eval(&body, core.NewEnvironment(environment, []string{symbol}, []core.Type{*e}), convertExceptions)
+				return eval(&body, core.NewEnvironment(environment, []string{symbol}, []core.Type{*e}), false)
 			} else {
 				return e, nil
 			}
@@ -291,6 +291,8 @@ func evalCallable(node *core.Type) (*core.Type, error) {
 	if first.IsCallable() {
 		result := first.CallCallable(rest...)
 		return &result, nil
+	} else if first.IsException() {
+		return &first, nil
 	} else {
 		return nil, errors.New(fmt.Sprintf("Error: '%s' is not a function.", first.ToString(true)))
 	}

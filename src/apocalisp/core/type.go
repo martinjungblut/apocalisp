@@ -53,7 +53,11 @@ func (node Type) ToString(readably bool) string {
 	if node.IsNil() {
 		return "nil"
 	} else if node.IsException() {
-		return fmt.Sprintf("Exception: %s", node.AsException().ToString(readably))
+		if readably {
+			return node.AsException().ToString(readably)
+		} else {
+			return fmt.Sprintf("Exception: %s", node.AsException().ToString(readably))
+		}
 	} else if node.IsBoolean() {
 		return strconv.FormatBool(node.AsBoolean())
 	} else if node.IsInteger() {
