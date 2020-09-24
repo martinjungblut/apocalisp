@@ -300,11 +300,8 @@ func evalCallable(node *core.Type) (*core.Type, error) {
 
 func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Type, *core.Environment, bool) (*core.Type, error), convertExceptions bool) (*core.Type, error) {
 	if node.IsSymbol() && !strings.HasPrefix(node.AsSymbol(), ":") {
-		if t, err := environment.Get(node.AsSymbol()); err != nil {
-			return nil, err
-		} else {
-			return &t, nil
-		}
+		value := environment.Get(node.AsSymbol())
+		return &value, nil
 	}
 
 	if node.IsIterable() {
@@ -366,7 +363,7 @@ func quasiquote(node core.Type) core.Type {
 func isMacroCall(node core.Type, environment core.Environment, capture func(core.Type)) bool {
 	if iterable := node.AsIterable(); node.IsList() && len(iterable) >= 1 {
 		if first := iterable[0]; first.IsSymbol() {
-			if macro, err := environment.Get(first.AsSymbol()); err == nil && macro.IsMacroFunction() {
+			if macro := environment.Get(first.AsSymbol()); macro.IsMacroFunction() {
 				capture(macro)
 				return true
 			}

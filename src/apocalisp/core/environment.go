@@ -61,13 +61,13 @@ func (env *Environment) Find(symbol string) *Environment {
 	return nil
 }
 
-func (env *Environment) Get(symbol string) (Type, error) {
+func (env *Environment) Get(symbol string) Type {
 	if e := env.Find(symbol); e != nil {
 		for key, value := range e.table {
 			if key == symbol {
-				return value, nil
+				return value
 			}
 		}
 	}
-	return *NewStringException(fmt.Sprintf("'%s' not found", symbol)), nil
+	return *NewStringException(fmt.Sprintf("'%s' not found", symbol))
 }
