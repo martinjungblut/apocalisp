@@ -2,6 +2,7 @@ package apocalisp
 
 import (
 	"apocalisp/core"
+	"apocalisp/parser"
 	"fmt"
 	"github.com/peterh/liner"
 	"os"
@@ -37,7 +38,7 @@ func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) {
 	}()
 
 	// environment
-	environment := DefaultEnvironment(eval)
+	environment := DefaultEnvironment(parser.Parser{}, eval)
 
 	argv := core.NewList()
 	for i := range os.Args {
