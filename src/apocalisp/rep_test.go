@@ -25,7 +25,7 @@ func Test_Alternative_Function_Notation(t *testing.T) {
 	Repl_Test(`((\ (a b) (- a b)) 10 9)`, `1`, t)
 }
 
-func Test_Signed_Float_Support(t *testing.T) {
+func Test_Signed_Float_Support_Mathematical_Expressions(t *testing.T) {
 	Repl_Test(`(+ 1.0 1.0)`, `2.000000`, t)
 	Repl_Test(`(+ 1.0 1)`, `2.000000`, t)
 	Repl_Test(`(+ 1 1.0)`, `2.000000`, t)
@@ -36,4 +36,26 @@ func Test_Signed_Float_Support(t *testing.T) {
 	Repl_Test(`(/ 3 3)`, `1.000000`, t)
 	Repl_Test(`(/ 3 2)`, `1.500000`, t)
 	Repl_Test(`(/ -3 -3)`, `1.000000`, t)
+}
+
+func Test_Signed_Float_Support_Comparison_Expressions(t *testing.T) {
+	Repl_Test(`(< 5 5.01)`, `true`, t)
+	Repl_Test(`(< 5.01 5)`, `false`, t)
+	Repl_Test(`(< 5 10.0)`, `true`, t)
+	Repl_Test(`(< 10.0 5)`, `false`, t)
+
+	Repl_Test(`(<= 10 10.0)`, `true`, t)
+	Repl_Test(`(<= 10.0 10)`, `true`, t)
+	Repl_Test(`(<= 5 5.01)`, `true`, t)
+	Repl_Test(`(<= 5.01 5)`, `false`, t)
+
+	Repl_Test(`(> 5.01 5)`, `true`, t)
+	Repl_Test(`(> 5 5.01)`, `false`, t)
+	Repl_Test(`(> 10.0 5)`, `true`, t)
+	Repl_Test(`(> 5 10.0)`, `false`, t)
+
+	Repl_Test(`(>= 10.0 10)`, `true`, t)
+	Repl_Test(`(>= 10 10.0)`, `true`, t)
+	Repl_Test(`(>= 5.01 5)`, `true`, t)
+	Repl_Test(`(>= 5 5.01)`, `false`, t)
 }

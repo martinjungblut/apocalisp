@@ -141,9 +141,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable("<", func(args ...core.Type) core.Type {
 		result := false
 		if len(args) == 2 {
-			if args[0].IsInteger() && args[1].IsInteger() {
-				result = args[0].AsInteger() < args[1].AsInteger()
-			}
+			result = args[0].AsNumber() < args[1].AsNumber()
 		}
 		return *core.NewBoolean(result)
 	})
@@ -151,9 +149,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable("<=", func(args ...core.Type) core.Type {
 		result := false
 		if len(args) == 2 {
-			if args[0].IsInteger() && args[1].IsInteger() {
-				result = args[0].AsInteger() <= args[1].AsInteger()
-			}
+			result = args[0].AsNumber() <= args[1].AsNumber()
 		}
 		return *core.NewBoolean(result)
 	})
@@ -161,9 +157,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable(">", func(args ...core.Type) core.Type {
 		result := false
 		if len(args) == 2 {
-			if args[0].IsInteger() && args[1].IsInteger() {
-				result = args[0].AsInteger() > args[1].AsInteger()
-			}
+			result = args[0].AsNumber() > args[1].AsNumber()
 		}
 		return *core.NewBoolean(result)
 	})
@@ -171,9 +165,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable(">=", func(args ...core.Type) core.Type {
 		result := false
 		if len(args) == 2 {
-			if args[0].IsInteger() && args[1].IsInteger() {
-				result = args[0].AsInteger() >= args[1].AsInteger()
-			}
+			result = args[0].AsNumber() >= args[1].AsNumber()
 		}
 		return *core.NewBoolean(result)
 	})
