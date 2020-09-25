@@ -355,6 +355,10 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 				for _, e := range iterable {
 					result.Append(f.CallFunction(e))
 				}
+			} else if f.IsCallable() {
+				for _, e := range iterable {
+					result.Append(f.CallCallable(e))
+				}
 			}
 		}
 
@@ -369,6 +373,114 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 			}
 		}
 		return *core.NewNil()
+	})
+
+	environment.SetCallable("nil?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			return *core.NewBoolean(args[0].IsNil())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("true?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 && args[0].IsBoolean() {
+			return *core.NewBoolean(args[0].AsBoolean())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("false?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 && args[0].IsBoolean() {
+			return *core.NewBoolean(!args[0].AsBoolean())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("symbol?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			return *core.NewBoolean(args[0].IsSymbol())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("sequential?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			return *core.NewBoolean(args[0].IsIterable())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("map?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			return *core.NewBoolean(args[0].IsHashmap())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("symbol", func(args ...core.Type) core.Type {
+		if len(args) >= 1 && args[0].IsString() {
+			return *core.NewSymbol(args[0].AsString())
+		}
+		return *core.NewStringException("Provided value must be a symbol.")
+	})
+
+	environment.SetCallable("vector", func(args ...core.Type) core.Type {
+		vec := *core.NewVector()
+		for _, e := range args {
+			vec.Append(e)
+		}
+		return vec
+	})
+
+	environment.SetCallable("vector?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			return *core.NewBoolean(args[0].IsVector())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("keyword", func(args ...core.Type) core.Type {
+		if len(args) >= 1 && (args[0].IsSymbol() || args[0].IsString()) {
+			if strings.HasPrefix(args[0].AsSymbol(), ":") {
+				return args[0]
+			} else if args[0].IsSymbol() {
+				return *core.NewSymbol(fmt.Sprintf(":%s", args[0].AsSymbol()))
+			}
+
+			if strings.HasPrefix(args[0].AsString(), ":") {
+				return *core.NewSymbol(args[0].AsString())
+			} else if args[0].IsString() {
+				return *core.NewSymbol(fmt.Sprintf(":%s", args[0].AsString()))
+			}
+		}
+		return *core.NewStringException("Provided value must be a symbol or string.")
+	})
+
+	environment.SetCallable("keyword?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 && args[0].IsSymbol() {
+			return *core.NewBoolean(strings.HasPrefix(args[0].AsSymbol(), ":"))
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("keys", func(args ...core.Type) core.Type {
+		keys := *core.NewList()
+		if len(args) >= 1 && args[0].IsHashmap() {
+			for key := range args[0].AsHashmap() {
+				keys.Append(key)
+			}
+		}
+		return keys
+	})
+
+	environment.SetCallable("vals", func(args ...core.Type) core.Type {
+		values := *core.NewList()
+		if len(args) >= 1 && args[0].IsHashmap() {
+			for _, value := range args[0].AsHashmap() {
+				values.Append(value)
+			}
+		}
+		return values
 	})
 
 	return environment
