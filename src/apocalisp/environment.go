@@ -350,19 +350,40 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		result := core.NewList()
 
 		if len(args) >= 2 && args[1].IsIterable() {
-			f, iterable := args[0], args[1].AsIterable()
-			if f.IsFunction() {
+			first, iterable := args[0], args[1].AsIterable()
+			if first.IsFunction() {
 				for _, e := range iterable {
-					result.Append(f.CallFunction(e))
+					result.Append(first.CallFunction(e))
 				}
-			} else if f.IsCallable() {
+			} else if first.IsCallable() {
 				for _, e := range iterable {
-					result.Append(f.CallCallable(e))
+					result.Append(first.CallCallable(e))
 				}
 			}
 		}
 
 		return *result
+	})
+
+	environment.SetCallable("apply", func(args ...core.Type) core.Type {
+		if len(args) >= 2 {
+			lastIndex := len(args) - 1
+			first, middle, last := args[0], args[1:lastIndex], args[lastIndex]
+
+			if (first.IsFunction() || first.IsCallable()) && last.IsIterable() {
+				for _, e := range last.AsIterable() {
+					middle = append(middle, e)
+				}
+
+				if first.IsFunction() {
+					return first.CallFunction(middle...)
+				} else if first.IsCallable() {
+					return first.CallCallable(middle...)
+				}
+			}
+		}
+
+		return *core.NewList()
 	})
 
 	environment.SetCallable("eval", func(args ...core.Type) core.Type {
@@ -481,6 +502,21 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 			}
 		}
 		return values
+	})
+
+	environment.SetCallable("get", func(args ...core.Type) core.Type {
+		if len(args) >= 2 && args[0].IsHashmap() {
+			haystack, needle := args[0].AsHashmap(), args[1]
+			for key, value := range haystack {
+				if key.IsString() && needle.IsString() && key.AsString() == needle.AsString() {
+					return value
+				}
+				if key.IsSymbol() && needle.IsSymbol() && key.AsSymbol() == needle.AsSymbol() {
+					return value
+				}
+			}
+		}
+		return *core.NewNil()
 	})
 
 	return environment
