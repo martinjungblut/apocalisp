@@ -32,7 +32,7 @@ func readForm(reader *reader) (*core.Type, error) {
 		if list, err := readList(reader); err == nil {
 			symbol := "with-meta"
 			subelements := *list.List
-			seq := []core.Type{core.Type{Symbol: &symbol}, subelements[1], subelements[0]}
+			seq := []core.Type{{Symbol: &symbol}, subelements[1], subelements[0]}
 			return &core.Type{List: &seq}, nil
 		} else {
 			fmt.Printf("%s\n", err.Error())
@@ -74,13 +74,11 @@ func readSequence(reader *reader) (*[]core.Type, error) {
 }
 
 func readAtom(token *string) (*core.Type, error) {
-	i, err := strconv.ParseInt(*token, 10, 64)
-	if err == nil {
+	if i, err := strconv.ParseInt(*token, 10, 64); err == nil {
 		return &core.Type{Integer: &i}, nil
 	}
 
-	f, err := strconv.ParseFloat(*token, 64)
-	if err == nil {
+	if f, err := strconv.ParseFloat(*token, 64); err == nil {
 		return &core.Type{Float: &f}, nil
 	}
 
@@ -106,8 +104,7 @@ func readAtom(token *string) (*core.Type, error) {
 }
 
 func readList(reader *reader) (*core.Type, error) {
-	sequence, err := readSequence(reader)
-	if err != nil {
+	if sequence, err := readSequence(reader); err != nil {
 		return nil, err
 	} else {
 		return &core.Type{List: sequence}, nil
@@ -115,8 +112,7 @@ func readList(reader *reader) (*core.Type, error) {
 }
 
 func readVector(reader *reader) (*core.Type, error) {
-	sequence, err := readSequence(reader)
-	if err != nil {
+	if sequence, err := readSequence(reader); err != nil {
 		return nil, err
 	} else {
 		return &core.Type{Vector: sequence}, nil
@@ -124,8 +120,7 @@ func readVector(reader *reader) (*core.Type, error) {
 }
 
 func readHashmap(reader *reader) (*core.Type, error) {
-	sequence, err := readSequence(reader)
-	if err != nil {
+	if sequence, err := readSequence(reader); err != nil {
 		return nil, err
 	} else {
 		return core.NewHashmapFromSequence(*sequence), nil
@@ -136,7 +131,7 @@ func readPrefixExpansion(reader *reader, symbol string) (*core.Type, error) {
 	if form, err := readForm(reader); err != nil {
 		return nil, err
 	} else if form != nil {
-		sequence := []core.Type{core.Type{Symbol: &symbol}, *form}
+		sequence := []core.Type{{Symbol: &symbol}, *form}
 		return &core.Type{List: &sequence}, nil
 	} else {
 		return nil, nil

@@ -523,5 +523,20 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		return *core.NewNil()
 	})
 
+	environment.SetCallable("contains?", func(args ...core.Type) core.Type {
+		if len(args) >= 2 && args[0].IsHashmap() && (args[1].IsString() || args[1].IsSymbol()) {
+			haystack, needle := args[0].AsHashmap(), args[1]
+			for key := range haystack {
+				if key.IsString() && needle.IsString() && key.AsString() == needle.AsString() {
+					return *core.NewBoolean(true)
+				}
+				if key.IsSymbol() && needle.IsSymbol() && key.AsSymbol() == needle.AsSymbol() {
+					return *core.NewBoolean(true)
+				}
+			}
+		}
+		return *core.NewBoolean(false)
+	})
+
 	return environment
 }
