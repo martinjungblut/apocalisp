@@ -1,25 +1,33 @@
 package core
 
 func NewHashmap() *Type {
-	m := make(map[Type]Type)
+	m := make(map[string]Type)
 	return &Type{Hashmap: &m}
 }
 
 func NewHashmapFromSequence(sequence []Type) *Type {
-	m := make(map[Type]Type)
+	m := make(map[string]Type)
 
 	for i := 0; i < len(sequence) && i+1 < len(sequence); i += 2 {
-		m[sequence[i]] = sequence[i+1]
+		if sequence[i].IsString() {
+			m[sequence[i].AsString()] = sequence[i+1]
+		} else if sequence[i].IsSymbol() {
+			m[sequence[i].AsSymbol()] = sequence[i+1]
+		}
 	}
 
 	return &Type{Hashmap: &m}
 }
 
 func (node *Type) HashmapSet(key Type, value Type) {
-	node.AsHashmap()[key] = value
+	if key.IsString() {
+		node.AsHashmap()[key.AsString()] = value
+	} else if key.IsSymbol() {
+		node.AsHashmap()[key.AsSymbol()] = value
+	}
 }
 
-func (node *Type) AsHashmap() map[Type]Type {
+func (node *Type) AsHashmap() map[string]Type {
 	return *node.Hashmap
 }
 

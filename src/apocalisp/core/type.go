@@ -17,7 +17,7 @@ type Type struct {
 	String    *string
 	List      *[]Type
 	Vector    *[]Type
-	Hashmap   *map[Type]Type
+	Hashmap   *map[string]Type
 	Callable  *(func(...Type) Type)
 	Function  *Function
 	Atom      **Type
@@ -37,7 +37,11 @@ func (node Type) ToString(readably bool) string {
 	hashmapToSequence := func(node Type) *[]Type {
 		sequence := make([]Type, 0)
 		for key, value := range node.AsHashmap() {
-			sequence = append(sequence, key)
+			if strings.HasPrefix(key, ":") {
+				sequence = append(sequence, *NewSymbol(key))
+			} else {
+				sequence = append(sequence, *NewString(key))
+			}
 			sequence = append(sequence, value)
 		}
 		return &sequence
@@ -89,6 +93,20 @@ func (node Type) Compare(other Type) bool {
 func compare(first Type, second Type) bool {
 	if (first.IsList() || first.IsVector()) && (second.IsList() || second.IsVector()) {
 		return compareIterables(first.AsIterable(), second.AsIterable())
+	}
+
+	if first.IsHashmap() && second.IsHashmap() {
+		hfirst, hsecond := first.AsHashmap(), second.AsHashmap()
+		if len(hfirst) == len(hsecond) {
+			for key := range hfirst {
+				if !hfirst[key].Compare(hsecond[key]) {
+					return false
+				}
+			}
+			return true
+		} else {
+			return false
+		}
 	}
 
 	if first.IsNil() && second.IsNil() {

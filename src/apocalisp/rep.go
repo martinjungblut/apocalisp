@@ -322,7 +322,7 @@ func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Typ
 			if evaluated, err := eval(&value, environment, convertExceptions); err != nil {
 				return nil, err
 			} else {
-				newHashmap.HashmapSet(key, *evaluated)
+				newHashmap.HashmapSet(*core.NewString(key), *evaluated)
 			}
 		}
 		return newHashmap, nil

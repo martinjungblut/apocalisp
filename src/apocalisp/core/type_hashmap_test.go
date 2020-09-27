@@ -28,11 +28,11 @@ func Test_NewHashmapFromSequence_With_Even_Values(t *testing.T) {
 
 	hashmap := NewHashmapFromSequence(sequence).AsHashmap()
 
-	if hashmap[first] != second {
+	if hashmap["first"] != second {
 		t.Error("NewHashmapFromSequence() failed.")
 	}
 
-	if hashmap[third] != fourth {
+	if hashmap["third"] != fourth {
 		t.Error("NewHashmapFromSequence() failed.")
 	}
 
@@ -51,7 +51,7 @@ func Test_NewHashmapFromSequence_With_Odd_Values(t *testing.T) {
 
 	hashmap := NewHashmapFromSequence(sequence).AsHashmap()
 
-	if hashmap[first] != second {
+	if hashmap["first"] != second {
 		t.Error("NewHashmapFromSequence() failed.")
 	}
 

@@ -492,7 +492,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		keys := *core.NewList()
 		if len(args) >= 1 && args[0].IsHashmap() {
 			for key := range args[0].AsHashmap() {
-				keys.Append(key)
+				keys.Append(*core.NewString(key))
 			}
 		}
 		return keys
@@ -512,10 +512,10 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		if len(args) >= 2 && args[0].IsHashmap() {
 			haystack, needle := args[0].AsHashmap(), args[1]
 			for key, value := range haystack {
-				if key.IsString() && needle.IsString() && key.AsString() == needle.AsString() {
+				if needle.IsString() && key == needle.AsString() {
 					return value
 				}
-				if key.IsSymbol() && needle.IsSymbol() && key.AsSymbol() == needle.AsSymbol() {
+				if needle.IsSymbol() && key == needle.AsSymbol() {
 					return value
 				}
 			}
@@ -527,10 +527,10 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		if len(args) >= 2 && args[0].IsHashmap() && (args[1].IsString() || args[1].IsSymbol()) {
 			haystack, needle := args[0].AsHashmap(), args[1]
 			for key := range haystack {
-				if key.IsString() && needle.IsString() && key.AsString() == needle.AsString() {
+				if needle.IsString() && key == needle.AsString() {
 					return *core.NewBoolean(true)
 				}
-				if key.IsSymbol() && needle.IsSymbol() && key.AsSymbol() == needle.AsSymbol() {
+				if needle.IsSymbol() && key == needle.AsSymbol() {
 					return *core.NewBoolean(true)
 				}
 			}
