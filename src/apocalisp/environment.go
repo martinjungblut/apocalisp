@@ -492,7 +492,12 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		keys := *core.NewList()
 		if len(args) >= 1 && args[0].IsHashmap() {
 			for key := range args[0].AsHashmap() {
-				keys.Append(*core.NewString(key))
+				// TODO: fix this, hashmaps should keep track of symbols/strings
+				if strings.HasPrefix(key, ":") {
+					keys.Append(*core.NewSymbol(key))
+				} else {
+					keys.Append(*core.NewString(key))
+				}
 			}
 		}
 		return keys
@@ -536,6 +541,50 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 			}
 		}
 		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("assoc", func(args ...core.Type) core.Type {
+		if len(args) >= 1 && args[0].IsHashmap() {
+			newHashmap := core.NewHashmap().AsHashmap()
+			for key, value := range args[0].AsHashmap() {
+				newHashmap[key] = value
+			}
+			for key, value := range core.NewHashmapFromSequence(args[1:]).AsHashmap() {
+				newHashmap[key] = value
+			}
+			return core.Type{Hashmap: &newHashmap}
+		}
+		return *core.NewHashmap()
+	})
+
+	environment.SetCallable("dissoc", func(args ...core.Type) core.Type {
+		if len(args) >= 1 && args[0].IsHashmap() {
+			removedKeys := make([]string, 0)
+			for _, removedKey := range args[1:] {
+				if removedKey.IsString() {
+					removedKeys = append(removedKeys, removedKey.AsString())
+				} else if removedKey.IsSymbol() {
+					removedKeys = append(removedKeys, removedKey.AsSymbol())
+				}
+			}
+
+			newHashmap := core.NewHashmap().AsHashmap()
+			for key, value := range args[0].AsHashmap() {
+				found := false
+				for _, removedKey := range removedKeys {
+					if key == removedKey {
+						found = true
+						break
+					}
+				}
+				if !found {
+					newHashmap[key] = value
+				}
+			}
+
+			return core.Type{Hashmap: &newHashmap}
+		}
+		return *core.NewHashmap()
 	})
 
 	return environment
