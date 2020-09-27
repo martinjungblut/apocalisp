@@ -386,6 +386,10 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		return *core.NewList()
 	})
 
+	environment.SetCallable("hash-map", func(args ...core.Type) core.Type {
+		return *core.NewHashmapFromSequence(args)
+	})
+
 	environment.SetCallable("eval", func(args ...core.Type) core.Type {
 		if len(args) >= 1 {
 			node := args[0]
@@ -419,7 +423,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("symbol?", func(args ...core.Type) core.Type {
 		if len(args) >= 1 {
-			return *core.NewBoolean(args[0].IsSymbol())
+			return *core.NewBoolean(args[0].IsSymbol() && !strings.HasPrefix(args[0].AsSymbol(), ":"))
 		}
 		return *core.NewBoolean(false)
 	})
