@@ -12,6 +12,7 @@ func NewHashmapFromSequence(sequence []Type) *Type {
 		if sequence[i].IsString() {
 			m[sequence[i].AsString()] = sequence[i+1]
 		} else if sequence[i].IsSymbol() {
+			sequence[i+1].HashmapSymbolValue = true
 			m[sequence[i].AsSymbol()] = sequence[i+1]
 		}
 	}

@@ -483,9 +483,8 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable("keys", func(args ...core.Type) core.Type {
 		keys := *core.NewList()
 		if len(args) >= 1 && args[0].IsHashmap() {
-			for key := range args[0].AsHashmap() {
-				// TODO: fix this, hashmaps should keep track of symbols/strings
-				if strings.HasPrefix(key, ":") {
+			for key, value := range args[0].AsHashmap() {
+				if value.HashmapSymbolValue {
 					keys.Append(*core.NewSymbol(key))
 				} else {
 					keys.Append(*core.NewString(key))
