@@ -5,7 +5,6 @@ import (
 	"apocalisp/parser"
 	"errors"
 	"fmt"
-	"strings"
 )
 
 func Rep(sexpr string, environment *core.Environment, eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) (string, error) {
@@ -299,7 +298,7 @@ func evalCallable(node *core.Type) (*core.Type, error) {
 }
 
 func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Type, *core.Environment, bool) (*core.Type, error), convertExceptions bool) (*core.Type, error) {
-	if node.IsSymbol() && !strings.HasPrefix(node.AsSymbol(), ":") {
+	if node.IsSymbol() && !node.IsKeyword() {
 		value := environment.Get(node.AsSymbol())
 		return &value, nil
 	}

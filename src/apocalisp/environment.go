@@ -423,7 +423,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("symbol?", func(args ...core.Type) core.Type {
 		if len(args) >= 1 {
-			return *core.NewBoolean(args[0].IsSymbol() && !strings.HasPrefix(args[0].AsSymbol(), ":"))
+			return *core.NewBoolean(args[0].IsSymbol() && !args[0].IsKeyword())
 		}
 		return *core.NewBoolean(false)
 	})
@@ -465,17 +465,9 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	})
 
 	environment.SetCallable("keyword", func(args ...core.Type) core.Type {
-		if len(args) >= 1 && (args[0].IsSymbol() || args[0].IsString()) {
-			if strings.HasPrefix(args[0].AsSymbol(), ":") {
-				return args[0]
-			} else if args[0].IsSymbol() {
-				return *core.NewSymbol(fmt.Sprintf(":%s", args[0].AsSymbol()))
-			}
-
-			if strings.HasPrefix(args[0].AsString(), ":") {
-				return *core.NewSymbol(args[0].AsString())
-			} else if args[0].IsString() {
-				return *core.NewSymbol(fmt.Sprintf(":%s", args[0].AsString()))
+		if len(args) >= 1 {
+			if converted, node := args[0].ToKeyword(); converted {
+				return *node
 			}
 		}
 		return *core.NewStringException("Provided value must be a symbol or string.")
@@ -483,7 +475,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("keyword?", func(args ...core.Type) core.Type {
 		if len(args) >= 1 && args[0].IsSymbol() {
-			return *core.NewBoolean(strings.HasPrefix(args[0].AsSymbol(), ":"))
+			return *core.NewBoolean(args[0].IsKeyword())
 		}
 		return *core.NewBoolean(false)
 	})

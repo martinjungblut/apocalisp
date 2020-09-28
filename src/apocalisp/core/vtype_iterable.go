@@ -1,30 +1,5 @@
 package core
 
-func NewList(args ...Type) *Type {
-	slice := make([]Type, 0)
-	for _, arg := range args {
-		slice = append(slice, arg)
-	}
-	return &Type{List: &slice}
-}
-
-func NewVector() *Type {
-	slice := make([]Type, 0)
-	return &Type{Vector: &slice}
-}
-
-func (node *Type) IsList() bool {
-	return node.List != nil
-}
-
-func (node *Type) IsVector() bool {
-	return node.Vector != nil
-}
-
-func (node *Type) IsEmptyList() bool {
-	return node.IsList() && len(node.AsIterable()) == 0
-}
-
 func (node *Type) IsIterable() bool {
 	return node.IsList() || node.IsVector()
 }

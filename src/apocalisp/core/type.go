@@ -37,6 +37,7 @@ func (node Type) ToString(readably bool) string {
 	hashmapToSequence := func(node Type) *[]Type {
 		sequence := make([]Type, 0)
 		for key, value := range node.AsHashmap() {
+			// TODO: fix this, hashmaps should keep track of symbols/strings
 			if strings.HasPrefix(key, ":") {
 				sequence = append(sequence, *NewSymbol(key))
 			} else {
