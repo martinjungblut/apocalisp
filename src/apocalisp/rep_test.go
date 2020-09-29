@@ -59,3 +59,9 @@ func Test_Signed_Float_Support_Comparison_Expressions(t *testing.T) {
 	Repl_Test(`(>= 5.01 5)`, `true`, t)
 	Repl_Test(`(>= 5 5.01)`, `false`, t)
 }
+
+func Test_Signed_Float_Support_Equality_Expressions(t *testing.T) {
+	Repl_Test(`(= 5 5.0)`, `true`, t)
+	Repl_Test(`(= 0 0.0)`, `true`, t)
+	Repl_Test(`(= -1 -1.0)`, `true`, t)
+}

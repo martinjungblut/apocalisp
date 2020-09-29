@@ -118,12 +118,8 @@ func compare(first Type, second Type) bool {
 		return first.AsBoolean() == second.AsBoolean()
 	}
 
-	if first.IsInteger() && second.IsInteger() {
-		return first.AsInteger() == second.AsInteger()
-	}
-
-	if first.IsFloat() && second.IsFloat() {
-		return first.AsFloat() == second.AsFloat()
+	if first.IsNumber() && second.IsNumber() {
+		return first.AsNumber() == second.AsNumber()
 	}
 
 	if first.IsString() && second.IsString() {
