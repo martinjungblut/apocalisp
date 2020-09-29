@@ -13,3 +13,17 @@ func (node *Type) AsNumber() float64 {
 	}
 	return 0
 }
+
+func (node *Type) CoerceNumber() *Type {
+	if node.IsInteger() {
+		return node
+	} else if node.IsFloat() {
+		if coerced := int64(node.AsFloat()); float64(coerced) == node.AsFloat() {
+			return &Type{Integer: &coerced}
+		} else {
+			return node
+		}
+	}
+
+	return nil
+}
