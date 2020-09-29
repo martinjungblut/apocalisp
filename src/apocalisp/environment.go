@@ -353,11 +353,19 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 			first, iterable := args[0], args[1].AsIterable()
 			if first.IsFunction() {
 				for _, e := range iterable {
-					result.Append(first.CallFunction(e))
+					if rval := first.CallFunction(e); rval.IsException() {
+						return *rval.Exception
+					} else {
+						result.Append(rval)
+					}
 				}
 			} else if first.IsCallable() {
 				for _, e := range iterable {
-					result.Append(first.CallCallable(e))
+					if rval := first.CallCallable(e); rval.IsException() {
+						return *rval.Exception
+					} else {
+						result.Append(rval)
+					}
 				}
 			}
 		}

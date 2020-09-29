@@ -177,7 +177,7 @@ func tcoSpecialFormFn(eval func(*core.Type, *core.Environment, bool) (*core.Type
 	if len(rest) < 2 || !rest[0].IsIterable() {
 		return nil, errors.New("Error: Invalid syntax for `fn*`.")
 	} else {
-		var symbols []string
+		symbols := make([]string, 0)
 		for _, node := range rest[0].AsIterable() {
 			if node.IsSymbol() {
 				symbols = append(symbols, node.AsSymbol())
@@ -189,8 +189,7 @@ func tcoSpecialFormFn(eval func(*core.Type, *core.Environment, bool) (*core.Type
 		callable := func(args ...core.Type) core.Type {
 			newEnvironment := core.NewEnvironment(*environment, symbols, args)
 			if result, err := eval(&rest[1], newEnvironment, convertExceptions); err != nil {
-				errorMessage := err.Error()
-				return core.Type{String: &errorMessage}
+				return *core.NewString(err.Error())
 			} else {
 				return *result
 			}
