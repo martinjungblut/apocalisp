@@ -11,103 +11,58 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment := core.NewEnvironment(nil, []string{}, []core.Type{})
 
 	environment.SetCallable("+", func(inputs ...core.Type) core.Type {
-		floatFound := false
-		var rfloat float64 = 0
-		if inputs[0].IsInteger() {
-			rfloat = float64(inputs[0].AsInteger())
-		} else if inputs[0].IsFloat() {
-			rfloat = inputs[0].AsFloat()
-			floatFound = true
+		var result float64
+		for _, input := range inputs {
+			result += input.AsNumber()
 		}
 
-		for _, input := range inputs[1:] {
-			if input.IsInteger() {
-				rfloat += float64(input.AsInteger())
-			} else if input.IsFloat() {
-				rfloat += input.AsFloat()
-				floatFound = true
-			}
-		}
-
-		if floatFound {
-			return core.Type{Float: &rfloat}
-		} else {
-			var rint int64 = int64(rfloat)
-			return core.Type{Integer: &rint}
-		}
+		val := core.Type{Float: &result}
+		return *val.CoerceNumber()
 	})
 
 	environment.SetCallable("-", func(inputs ...core.Type) core.Type {
-		floatFound := false
-		var rfloat float64 = 0
-		if inputs[0].IsInteger() {
-			rfloat = float64(inputs[0].AsInteger())
-		} else if inputs[0].IsFloat() {
-			rfloat = inputs[0].AsFloat()
-			floatFound = true
+		var result float64
+		if len(inputs) >= 1 {
+			result = inputs[0].AsNumber()
 		}
-
-		for _, input := range inputs[1:] {
-			if input.IsInteger() {
-				rfloat -= float64(input.AsInteger())
-			} else if input.IsFloat() {
-				rfloat -= input.AsFloat()
-				floatFound = true
+		if len(inputs) >= 2 {
+			for _, input := range inputs[1:] {
+				result -= input.AsNumber()
 			}
 		}
 
-		if floatFound {
-			return core.Type{Float: &rfloat}
-		} else {
-			var rint int64 = int64(rfloat)
-			return core.Type{Integer: &rint}
-		}
+		val := core.Type{Float: &result}
+		return *val.CoerceNumber()
 	})
 
 	environment.SetCallable("/", func(inputs ...core.Type) core.Type {
-		var rfloat float64 = 0
-		if inputs[0].IsInteger() {
-			rfloat = float64(inputs[0].AsInteger())
-		} else if inputs[0].IsFloat() {
-			rfloat = inputs[0].AsFloat()
+		var result float64
+		if len(inputs) >= 1 {
+			result = inputs[0].AsNumber()
 		}
-
-		for _, input := range inputs[1:] {
-			if input.IsInteger() {
-				rfloat /= float64(input.AsInteger())
-			} else if input.IsFloat() {
-				rfloat /= input.AsFloat()
+		if len(inputs) >= 2 {
+			for _, input := range inputs[1:] {
+				result /= input.AsNumber()
 			}
 		}
 
-		return core.Type{Float: &rfloat}
+		val := core.Type{Float: &result}
+		return *val.CoerceNumber()
 	})
 
 	environment.SetCallable("*", func(inputs ...core.Type) core.Type {
-		floatFound := false
-		var rfloat float64 = 0
-		if inputs[0].IsInteger() {
-			rfloat = float64(inputs[0].AsInteger())
-		} else if inputs[0].IsFloat() {
-			rfloat = inputs[0].AsFloat()
-			floatFound = true
+		var result float64
+		if len(inputs) >= 1 {
+			result = inputs[0].AsNumber()
 		}
-
-		for _, input := range inputs[1:] {
-			if input.IsInteger() {
-				rfloat *= float64(input.AsInteger())
-			} else if input.IsFloat() {
-				rfloat *= input.AsFloat()
-				floatFound = true
+		if len(inputs) >= 2 {
+			for _, input := range inputs[1:] {
+				result *= input.AsNumber()
 			}
 		}
 
-		if floatFound {
-			return core.Type{Float: &rfloat}
-		} else {
-			var rint int64 = int64(rfloat)
-			return core.Type{Integer: &rint}
-		}
+		val := core.Type{Float: &result}
+		return *val.CoerceNumber()
 	})
 
 	environment.SetCallable("list", func(args ...core.Type) core.Type {
