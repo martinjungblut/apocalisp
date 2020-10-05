@@ -471,10 +471,9 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		if len(args) >= 2 && args[0].IsHashmap() {
 			haystack, needle := args[0].AsHashmap(), args[1]
 			for key, value := range haystack {
-				if needle.IsString() && key == needle.AsString() {
+				if needle.IsString() && !value.HashmapSymbolValue && needle.AsString() == key {
 					return value
-				}
-				if needle.IsSymbol() && key == needle.AsSymbol() {
+				} else if needle.IsSymbol() && value.HashmapSymbolValue && needle.AsSymbol() == key {
 					return value
 				}
 			}

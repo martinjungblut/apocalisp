@@ -70,3 +70,14 @@ func Test_Signed_Float_Support_Equality_Expressions(t *testing.T) {
 	Repl_Test(`(= 0 0.0)`, `true`, t)
 	Repl_Test(`(= -1 -1.0)`, `true`, t)
 }
+
+func Test_Hashmap_Get(t *testing.T) {
+	Repl_Test(`(get {":key" "value"} ":key")`, `"value"`, t)
+	Repl_Test(`(get {":key" "value"} :key)`, `nil`, t)
+
+	Repl_Test(`(get {:key "value"} ":key")`, `nil`, t)
+	Repl_Test(`(get {:key "value"} :key)`, `"value"`, t)
+
+	Repl_Test(`(get {":key" "fvalue" :key "svalue"} ":key")`, `"fvalue"`, t)
+	Repl_Test(`(get {":key" "fvalue" :key "svalue"} :key)`, `"svalue"`, t)
+}
