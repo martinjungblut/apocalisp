@@ -1,34 +1,43 @@
 package core
 
+type HashmapKey struct {
+	Identifier string
+	IsSymbol   bool
+}
+
+func NewHashmapKey(identifier string, isSymbol bool) HashmapKey {
+	return HashmapKey{Identifier: identifier, IsSymbol: isSymbol}
+}
+
+func (node *Type) AsHashmapKey() *HashmapKey {
+	if node.IsSymbol() {
+		return &HashmapKey{Identifier: node.AsSymbol(), IsSymbol: true}
+	} else if node.IsString() {
+		return &HashmapKey{Identifier: node.AsString(), IsSymbol: false}
+	}
+	return nil
+}
+
 func NewHashmap() *Type {
-	m := make(map[string]Type)
+	m := make(map[HashmapKey]Type)
 	return &Type{Hashmap: &m}
 }
 
 func NewHashmapFromSequence(sequence []Type) *Type {
-	m := make(map[string]Type)
-
+	m := make(map[HashmapKey]Type)
 	for i := 0; i < len(sequence) && i+1 < len(sequence); i += 2 {
-		if sequence[i].IsString() {
-			m[sequence[i].AsString()] = sequence[i+1]
-		} else if sequence[i].IsSymbol() {
-			sequence[i+1].HashmapSymbolValue = true
-			m[sequence[i].AsSymbol()] = sequence[i+1]
+		if key := sequence[i].AsHashmapKey(); key != nil {
+			m[*key] = sequence[i+1]
 		}
 	}
-
 	return &Type{Hashmap: &m}
 }
 
-func (node *Type) HashmapSet(key Type, value Type) {
-	if key.IsString() {
-		node.AsHashmap()[key.AsString()] = value
-	} else if key.IsSymbol() {
-		node.AsHashmap()[key.AsSymbol()] = value
-	}
+func (node *Type) HashmapSet(key HashmapKey, value Type) {
+	node.AsHashmap()[key] = value
 }
 
-func (node *Type) AsHashmap() map[string]Type {
+func (node *Type) AsHashmap() map[HashmapKey]Type {
 	return *node.Hashmap
 }
 

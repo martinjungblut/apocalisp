@@ -446,11 +446,11 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable("keys", func(args ...core.Type) core.Type {
 		keys := *core.NewList()
 		if len(args) >= 1 && args[0].IsHashmap() {
-			for key, value := range args[0].AsHashmap() {
-				if value.HashmapSymbolValue {
-					keys.Append(*core.NewSymbol(key))
+			for key := range args[0].AsHashmap() {
+				if key.IsSymbol {
+					keys.Append(*core.NewSymbol(key.Identifier))
 				} else {
-					keys.Append(*core.NewString(key))
+					keys.Append(*core.NewString(key.Identifier))
 				}
 			}
 		}
@@ -469,11 +469,8 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("get", func(args ...core.Type) core.Type {
 		if len(args) >= 2 && args[0].IsHashmap() {
-			haystack, needle := args[0].AsHashmap(), args[1]
-			for key, value := range haystack {
-				if needle.IsString() && !value.HashmapSymbolValue && needle.AsString() == key {
-					return value
-				} else if needle.IsSymbol() && value.HashmapSymbolValue && needle.AsSymbol() == key {
+			if haystack, needle := args[0].AsHashmap(), args[1].AsHashmapKey(); needle != nil {
+				if value, ok := haystack[*needle]; ok {
 					return value
 				}
 			}
@@ -483,13 +480,9 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("contains?", func(args ...core.Type) core.Type {
 		if len(args) >= 2 && args[0].IsHashmap() && (args[1].IsString() || args[1].IsSymbol()) {
-			haystack, needle := args[0].AsHashmap(), args[1]
-			for key := range haystack {
-				if needle.IsString() && key == needle.AsString() {
-					return *core.NewBoolean(true)
-				}
-				if needle.IsSymbol() && key == needle.AsSymbol() {
-					return *core.NewBoolean(true)
+			if haystack, needle := args[0].AsHashmap(), args[1].AsHashmapKey(); needle != nil {
+				if _, ok := haystack[*needle]; ok {
+					return *core.NewBoolean(ok)
 				}
 			}
 		}
@@ -512,29 +505,19 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("dissoc", func(args ...core.Type) core.Type {
 		if len(args) >= 1 && args[0].IsHashmap() {
-			removedKeys := make([]string, 0)
-			for _, removedKey := range args[1:] {
-				if removedKey.IsString() {
-					removedKeys = append(removedKeys, removedKey.AsString())
-				} else if removedKey.IsSymbol() {
-					removedKeys = append(removedKeys, removedKey.AsSymbol())
+			blacklist := core.NewHashmap().AsHashmap()
+			for _, k := range args[1:] {
+				if key := k.AsHashmapKey(); key != nil {
+					blacklist[*key] = *core.NewNil()
 				}
 			}
 
 			newHashmap := core.NewHashmap().AsHashmap()
 			for key, value := range args[0].AsHashmap() {
-				found := false
-				for _, removedKey := range removedKeys {
-					if key == removedKey {
-						found = true
-						break
-					}
-				}
-				if !found {
+				if _, blacklisted := blacklist[key]; !blacklisted {
 					newHashmap[key] = value
 				}
 			}
-
 			return core.Type{Hashmap: &newHashmap}
 		}
 		return *core.NewHashmap()

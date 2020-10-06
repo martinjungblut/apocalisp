@@ -320,8 +320,7 @@ func evalAst(node *core.Type, environment *core.Environment, eval func(*core.Typ
 			if evaluated, err := eval(&value, environment, convertExceptions); err != nil {
 				return nil, err
 			} else {
-				evaluated.HashmapSymbolValue = value.HashmapSymbolValue
-				newHashmap.HashmapSet(*core.NewString(key), *evaluated)
+				newHashmap.HashmapSet(key, *evaluated)
 			}
 		}
 		return newHashmap, nil

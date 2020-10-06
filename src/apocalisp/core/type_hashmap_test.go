@@ -28,11 +28,11 @@ func Test_NewHashmapFromSequence_With_Even_Values(t *testing.T) {
 
 	hashmap := NewHashmapFromSequence(sequence).AsHashmap()
 
-	if hashmap["first"] != second {
+	if hashmap[NewHashmapKey("first", false)] != second {
 		t.Error("NewHashmapFromSequence() failed.")
 	}
 
-	if hashmap["third"] != fourth {
+	if hashmap[NewHashmapKey("third", false)] != fourth {
 		t.Error("NewHashmapFromSequence() failed.")
 	}
 
@@ -51,7 +51,7 @@ func Test_NewHashmapFromSequence_With_Odd_Values(t *testing.T) {
 
 	hashmap := NewHashmapFromSequence(sequence).AsHashmap()
 
-	if hashmap["first"] != second {
+	if hashmap[NewHashmapKey("first", false)] != second {
 		t.Error("NewHashmapFromSequence() failed.")
 	}
 
@@ -61,37 +61,35 @@ func Test_NewHashmapFromSequence_With_Odd_Values(t *testing.T) {
 }
 
 func Test_NewHashmapFromSequence_With_Mixed_Strings_And_Keywords(t *testing.T) {
-	first, second, third, fourth, fifth, sixth := *NewSymbol(":first"), *NewBoolean(true), *NewString(":third"), *NewBoolean(false), *NewSymbol("fifth"), *NewBoolean(true)
+	first, fivalue := *NewSymbol(":first"), *NewString("fivalue")
+	second, sevalue := *NewString(":second"), *NewString("sevalue")
+	third, thvalue := *NewSymbol("third"), *NewString("thvalue")
+	fourth, fovalue := *NewString("fourth"), *NewString("fovalue")
 
 	sequence := make([]Type, 0)
 	sequence = append(sequence, first)
+	sequence = append(sequence, fivalue)
 	sequence = append(sequence, second)
+	sequence = append(sequence, sevalue)
 	sequence = append(sequence, third)
+	sequence = append(sequence, thvalue)
 	sequence = append(sequence, fourth)
-	sequence = append(sequence, fifth)
-	sequence = append(sequence, sixth)
-
+	sequence = append(sequence, fovalue)
 	hashmap := NewHashmapFromSequence(sequence).AsHashmap()
 
-	hfirst, hthird, hfifth := hashmap[":first"], hashmap[":third"], hashmap["fifth"]
-	if !hfirst.AsBoolean() {
-		t.Error("NewHashmapFromSequence() failed.")
-	}
-	if !hfirst.HashmapSymbolValue || second.HashmapSymbolValue {
-		t.Error("NewHashmapFromSequence() failed.")
-	}
+	hfirst, hsecond := hashmap[NewHashmapKey(":first", true)], hashmap[NewHashmapKey(":second", false)]
+	hthird, hfourth := hashmap[NewHashmapKey("third", true)], hashmap[NewHashmapKey("fourth", false)]
 
-	if hthird.AsBoolean() {
+	if hfirst.AsString() != "fivalue" {
 		t.Error("NewHashmapFromSequence() failed.")
 	}
-	if hthird.HashmapSymbolValue || fourth.HashmapSymbolValue {
+	if hsecond.AsString() != "sevalue" {
 		t.Error("NewHashmapFromSequence() failed.")
 	}
-
-	if !hfifth.AsBoolean() {
+	if hthird.AsString() != "thvalue" {
 		t.Error("NewHashmapFromSequence() failed.")
 	}
-	if !hfifth.HashmapSymbolValue || sixth.HashmapSymbolValue {
+	if hfourth.AsString() != "fovalue" {
 		t.Error("NewHashmapFromSequence() failed.")
 	}
 }

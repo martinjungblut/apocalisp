@@ -8,20 +8,19 @@ import (
 )
 
 type Type struct {
-	Nil                bool
-	Exception          *Type
-	Boolean            *bool
-	Integer            *int64
-	Float              *float64
-	Symbol             *string
-	String             *string
-	List               *[]Type
-	Vector             *[]Type
-	Hashmap            *map[string]Type
-	HashmapSymbolValue bool
-	Callable           *(func(...Type) Type)
-	Function           *Function
-	Atom               **Type
+	Nil       bool
+	Exception *Type
+	Boolean   *bool
+	Integer   *int64
+	Float     *float64
+	Symbol    *string
+	String    *string
+	List      *[]Type
+	Vector    *[]Type
+	Hashmap   *map[HashmapKey]Type
+	Callable  *(func(...Type) Type)
+	Function  *Function
+	Atom      **Type
 }
 
 func (node Type) ToString(readably bool) string {
@@ -38,10 +37,10 @@ func (node Type) ToString(readably bool) string {
 	hashmapToSequence := func(node Type) *[]Type {
 		sequence := make([]Type, 0)
 		for key, value := range node.AsHashmap() {
-			if value.HashmapSymbolValue {
-				sequence = append(sequence, *NewSymbol(key))
+			if key.IsSymbol {
+				sequence = append(sequence, *NewSymbol(key.Identifier))
 			} else {
-				sequence = append(sequence, *NewString(key))
+				sequence = append(sequence, *NewString(key.Identifier))
 			}
 			sequence = append(sequence, value)
 		}
