@@ -10,6 +10,14 @@ import (
 	"runtime/debug"
 )
 
+func withLiner(handler func(*liner.State)) {
+	state := liner.NewLiner()
+	defer state.Close()
+
+	state.SetCtrlCAborts(false)
+	handler(state)
+}
+
 func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) {
 	// decrease max stack size to make TCO-related tests useful
 	debug.SetMaxStack(1 * 1024 * 1024)
@@ -47,6 +55,7 @@ func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) {
 		}
 	}
 	environment.Set("*ARGV*", *argv)
+	environment.Set("*host-language*", *core.NewString("apocalisp"))
 
 	_, _ = Rep(`(def! not (fn* (a) (if a false true)))`, environment, eval)
 	_, _ = Rep(`(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))`, environment, eval)
@@ -55,14 +64,12 @@ func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) {
 	if len(os.Args) >= 2 {
 		_, _ = Rep(fmt.Sprintf(`(load-file "%s")`, os.Args[1]), environment, eval)
 	} else {
-		// repl
-		fmt.Println("This is apocaLISP.")
+		_, _ = Rep(`(println (str "Mal [" *host-language* "]"))`, environment, eval)
 		for {
 			if sexpr, err := line.Prompt("user> "); err == nil {
 				line.AppendHistory(sexpr)
 
-				output, err := Rep(sexpr, environment, eval)
-				if err == nil {
+				if output, err := Rep(sexpr, environment, eval); err == nil {
 					if len(output) > 0 {
 						fmt.Printf("%s\n", output)
 					}

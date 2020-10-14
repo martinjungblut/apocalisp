@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"time"
+
+	"github.com/peterh/liner"
 )
 
 func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) *core.Environment {
@@ -345,7 +348,6 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 				}
 			}
 		}
-
 		return *core.NewList()
 	})
 
@@ -521,6 +523,72 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 			return core.Type{Hashmap: &newHashmap}
 		}
 		return *core.NewHashmap()
+	})
+
+	environment.SetCallable("readline", func(args ...core.Type) core.Type {
+		if len(args) >= 1 && args[0].IsString() {
+			var input *core.Type
+			withLiner(func(state *liner.State) {
+				if line, err := state.Prompt(args[0].AsString()); err == nil {
+					input = core.NewString(line)
+				}
+			})
+			if input != nil {
+				return *input
+			}
+		}
+		return *core.NewNil()
+	})
+
+	environment.SetCallable("number?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			return *core.NewBoolean(args[0].IsNumber())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("string?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			return *core.NewBoolean(args[0].IsString())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("fn?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			return *core.NewBoolean(args[0].IsFunction() || args[0].IsCallable())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("macro?", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			return *core.NewBoolean(args[0].IsMacroFunction())
+		}
+		return *core.NewBoolean(false)
+	})
+
+	environment.SetCallable("seq", func(args ...core.Type) core.Type {
+		if len(args) >= 1 {
+			arg := args[0]
+			if arg.IsList() && !arg.IsEmptyList() {
+				return arg
+			} else if arg.IsVector() {
+				return *core.NewList(arg.AsIterable()...)
+			} else if arg.IsString() {
+				result := *core.NewList()
+				for _, s := range strings.Split(arg.AsString(), "") {
+					result.Append(*core.NewString(s))
+				}
+				return result
+			}
+		}
+		return *core.NewNil()
+	})
+
+	environment.SetCallable("time-ms", func(args ...core.Type) core.Type {
+		t := time.Now().UnixNano() / int64(time.Millisecond)
+		return core.Type{Integer: &t}
 	})
 
 	return environment
