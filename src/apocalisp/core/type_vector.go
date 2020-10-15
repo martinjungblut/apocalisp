@@ -1,7 +1,10 @@
 package core
 
-func NewVector() *Type {
+func NewVector(args ...Type) *Type {
 	slice := make([]Type, 0)
+	for _, arg := range args {
+		slice = append(slice, arg)
+	}
 	return &Type{Vector: &slice}
 }
 

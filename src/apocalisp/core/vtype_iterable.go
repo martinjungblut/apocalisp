@@ -33,3 +33,11 @@ func (node *Type) Append(t Type) {
 		*node.Vector = append(*node.Vector, t)
 	}
 }
+
+func (node *Type) Prepend(t Type) {
+	if node.IsList() {
+		*node.List = append([]Type{t}, (*node.List)...)
+	} else if node.IsVector() {
+		*node.Vector = append([]Type{t}, (*node.Vector)...)
+	}
+}

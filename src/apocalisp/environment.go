@@ -586,6 +586,28 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		return *core.NewNil()
 	})
 
+	environment.SetCallable("conj", func(args ...core.Type) core.Type {
+		if len(args) >= 1 && args[0].IsIterable() {
+			iterable := args[0].AsIterable()
+			oargs := args[1:]
+
+			if args[0].IsList() {
+				nl := *core.NewList(iterable...)
+				for _, oarg := range oargs {
+					nl.Prepend(oarg)
+				}
+				return nl
+			} else if args[0].IsVector() {
+				nl := *core.NewVector(iterable...)
+				for _, oarg := range oargs {
+					nl.Append(oarg)
+				}
+				return nl
+			}
+		}
+		return *core.NewNil()
+	})
+
 	environment.SetCallable("time-ms", func(args ...core.Type) core.Type {
 		t := time.Now().UnixNano() / int64(time.Millisecond)
 		return core.Type{Integer: &t}
