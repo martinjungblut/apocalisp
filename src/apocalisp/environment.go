@@ -614,6 +614,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	})
 
 	environment.SetCallable("time-ms", func(args ...core.Type) core.Type {
+		time.Sleep(time.Millisecond)
 		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 		return core.Type{Integer: &timestamp}
 	})
