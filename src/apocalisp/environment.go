@@ -556,7 +556,12 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("fn?", func(args ...core.Type) core.Type {
 		if len(args) >= 1 {
-			return *core.NewBoolean(args[0].IsFunction() || args[0].IsCallable())
+			if args[0].IsSymbol() {
+				node := environment.Get(args[0].AsSymbol())
+				return *core.NewBoolean((node.IsFunction() || node.IsCallable()) && !node.IsMacroFunction())
+			} else {
+				return *core.NewBoolean((args[0].IsFunction() || args[0].IsCallable()) && !args[0].IsMacroFunction())
+			}
 		}
 		return *core.NewBoolean(false)
 	})
@@ -571,11 +576,11 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable("seq", func(args ...core.Type) core.Type {
 		if len(args) >= 1 {
 			arg := args[0]
-			if arg.IsList() && !arg.IsEmptyList() {
+			if arg.IsList() && !arg.IsEmptyIterable() {
 				return arg
-			} else if arg.IsVector() {
+			} else if arg.IsVector() && !arg.IsEmptyIterable() {
 				return *core.NewList(arg.AsIterable()...)
-			} else if arg.IsString() {
+			} else if arg.IsString() && len(arg.AsString()) > 0 {
 				result := *core.NewList()
 				for _, s := range strings.Split(arg.AsString(), "") {
 					result.Append(*core.NewString(s))
@@ -609,8 +614,36 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	})
 
 	environment.SetCallable("time-ms", func(args ...core.Type) core.Type {
-		t := time.Now().UnixNano() / int64(time.Millisecond)
-		return core.Type{Integer: &t}
+		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
+		return core.Type{Integer: &timestamp}
+	})
+
+	environment.SetCallable("meta", func(args ...core.Type) core.Type {
+		if len(args) >= 1 && args[0].Metadata != nil {
+			return *args[0].Metadata
+		}
+		return *core.NewNil()
+	})
+
+	environment.SetCallable("with-meta", func(args ...core.Type) core.Type {
+		if len(args) >= 2 && args[0].IsFunction() {
+			function, metadata := *args[0].Function, args[1]
+
+			newFunction := core.Function{}
+			newFunction.IsMacro = function.IsMacro
+
+			newFunction.Params = make([]string, len(function.Params))
+			copy(newFunction.Params, function.Params)
+
+			newFunction.Body = function.Body
+			newFunction.Callable = function.Callable
+			newFunction.Environment = function.Environment
+
+			result := core.Type{Function: &newFunction}
+			result.Metadata = &metadata
+			return result
+		}
+		return *core.NewNil()
 	})
 
 	return environment

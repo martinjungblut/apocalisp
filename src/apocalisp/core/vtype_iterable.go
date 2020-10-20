@@ -41,3 +41,7 @@ func (node *Type) Prepend(t Type) {
 		*node.Vector = append([]Type{t}, (*node.Vector)...)
 	}
 }
+
+func (node *Type) IsEmptyIterable() bool {
+	return node.IsIterable() && len(node.AsIterable()) == 0
+}

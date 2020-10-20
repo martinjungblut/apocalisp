@@ -11,7 +11,3 @@ func NewList(args ...Type) *Type {
 func (node *Type) IsList() bool {
 	return node.List != nil
 }
-
-func (node *Type) IsEmptyList() bool {
-	return node.IsList() && len(node.AsIterable()) == 0
-}

@@ -3,7 +3,6 @@ package parser
 import (
 	"apocalisp/core"
 	"apocalisp/escaping"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -29,14 +28,19 @@ func readForm(reader *reader) (*core.Type, error) {
 	}
 
 	if *token == "^" {
-		if list, err := readList(reader); err == nil {
-			symbol := "with-meta"
-			subelements := *list.List
-			seq := []core.Type{{Symbol: &symbol}, subelements[1], subelements[0]}
-			return &core.Type{List: &seq}, nil
-		} else {
-			fmt.Printf("%s\n", err.Error())
+		firstForm, err := readForm(reader)
+		if err != nil {
+			return nil, err
 		}
+
+		secondForm, err := readForm(reader)
+		if err != nil {
+			return nil, err
+		}
+
+		symbol := "with-meta"
+		seq := []core.Type{{Symbol: &symbol}, *secondForm, *firstForm}
+		return &core.Type{List: &seq}, nil
 	}
 
 	if *token == "(" {

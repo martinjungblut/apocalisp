@@ -72,9 +72,9 @@ func Evaluate(node *core.Type, environment *core.Environment, convertExceptions 
 			} else {
 				wrapReturn(evaluated, nil)
 			}
-		} else if node.IsEmptyList() {
+		} else if node.IsList() && node.IsEmptyIterable() {
 			wrapReturn(node, nil)
-		} else if node.IsList() {
+		} else if node.IsList() && !node.IsEmptyIterable() {
 			first, rest := node.AsIterable()[0], node.AsIterable()[1:]
 
 			if first.CompareSymbol("def!") {

@@ -21,6 +21,7 @@ type Type struct {
 	Callable  *(func(...Type) Type)
 	Function  *Function
 	Atom      **Type
+	Metadata  *Type
 }
 
 func (node Type) ToString(readably bool) string {
