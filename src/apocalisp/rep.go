@@ -250,11 +250,21 @@ func specialFormDefmacro(eval func(*core.Type, *core.Environment, bool) (*core.T
 		return nil, errors.New("Error: Invalid syntax for `def!`.")
 	} else {
 		if e, ierr := eval(&rest[1], environment, convertExceptions); ierr == nil {
+			result := e
+
 			if e.IsFunction() {
-				e.Function.IsMacro = true
+				newFunction := core.Function{
+					IsMacro:     true,
+					Environment: e.Function.Environment,
+					Body:        e.Function.Body,
+					Params:      e.Function.Params,
+					Callable:    e.Function.Callable,
+				}
+				result = &core.Type{Function: &newFunction, Metadata: e.Metadata}
 			}
-			environment.Set(rest[0].AsSymbol(), *e)
-			return e, nil
+
+			environment.Set(rest[0].AsSymbol(), *result)
+			return result, nil
 		} else {
 			return nil, ierr
 		}

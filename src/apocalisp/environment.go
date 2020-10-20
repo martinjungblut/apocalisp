@@ -627,22 +627,9 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	})
 
 	environment.SetCallable("with-meta", func(args ...core.Type) core.Type {
-		if len(args) >= 2 && args[0].IsFunction() {
-			function, metadata := *args[0].Function, args[1]
-
-			newFunction := core.Function{}
-			newFunction.IsMacro = function.IsMacro
-
-			newFunction.Params = make([]string, len(function.Params))
-			copy(newFunction.Params, function.Params)
-
-			newFunction.Body = function.Body
-			newFunction.Callable = function.Callable
-			newFunction.Environment = function.Environment
-
-			result := core.Type{Function: &newFunction}
-			result.Metadata = &metadata
-			return result
+		if len(args) >= 2 {
+			args[0].Metadata = &args[1]
+			return args[0]
 		}
 		return *core.NewNil()
 	})
