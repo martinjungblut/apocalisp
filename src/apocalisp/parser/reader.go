@@ -6,14 +6,13 @@ import (
 )
 
 type reader struct {
-	position int
-	tokens   []string
-
-	parensCount   int
-	bracketsCount int
-	bracesCount   int
-
+	position          int
 	readAheadPosition int
+	readAheadCalled   bool
+	tokens            []string
+	parensCount       int
+	bracketsCount     int
+	bracesCount       int
 }
 
 func newReader(tokens []string) *reader {
@@ -22,8 +21,11 @@ func newReader(tokens []string) *reader {
 }
 
 func (r *reader) next() (*string, error) {
-	if err := r.readAhead(); err != nil {
-		return nil, err
+	if !r.readAheadCalled {
+		r.readAheadCalled = true
+		if err := r.readAhead(); err != nil {
+			return nil, err
+		}
 	}
 
 	if r.position < len(r.tokens) {
@@ -42,7 +44,7 @@ func (r *reader) readAhead() error {
 		return strings.HasPrefix(token, "\"") && (len(token) == 1 || !strings.HasSuffix(token, "\""))
 	}
 
-	if !reachedEnd() {
+	for !reachedEnd() {
 		switch token := currentToken(); token {
 		case "(":
 			r.parensCount++
@@ -61,6 +63,7 @@ func (r *reader) readAhead() error {
 				return errors.New("Error: unexpected EOF.")
 			}
 		}
+		r.readAheadPosition++
 	}
 
 	if r.parensCount < 0 {
@@ -73,6 +76,5 @@ func (r *reader) readAhead() error {
 		return errors.New("Error: unexpected EOF.")
 	}
 
-	r.readAheadPosition++
 	return nil
 }

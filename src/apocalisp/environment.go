@@ -357,8 +357,9 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("eval", func(args ...core.Type) core.Type {
 		if len(args) >= 1 {
-			node := args[0]
-			if r, err := eval(&node, environment, true); err == nil {
+			if r, err := eval(&args[0], environment, false); err != nil {
+				return *core.NewStringException(err.Error())
+			} else {
 				return *r
 			}
 		}

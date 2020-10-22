@@ -14,15 +14,13 @@ func (parser Parser) Parse(sexpr string) (*core.Type, error) {
 }
 
 func Parse(sexpr string) (*core.Type, error) {
-	tokens := tokenize(sexpr)
-	reader := newReader(tokens)
-	return readForm(reader)
+	return readForm(newReader(tokenize(sexpr)))
 }
 
 func readForm(reader *reader) (*core.Type, error) {
 	token, err := reader.next()
 	if err != nil {
-		return nil, err
+		return core.NewStringException(err.Error()), nil
 	} else if token == nil {
 		return nil, nil
 	}
@@ -38,9 +36,7 @@ func readForm(reader *reader) (*core.Type, error) {
 			return nil, err
 		}
 
-		symbol := "with-meta"
-		seq := []core.Type{{Symbol: &symbol}, *secondForm, *firstForm}
-		return &core.Type{List: &seq}, nil
+		return core.NewList(*core.NewSymbol("with-meta"), *secondForm, *firstForm), nil
 	}
 
 	if *token == "(" {
@@ -98,7 +94,7 @@ func readAtom(token *string) (*core.Type, error) {
 
 	if strings.HasPrefix(*token, "\"") && strings.HasSuffix(*token, "\"") {
 		if t, err := escaping.UnescapeString(strings.TrimPrefix(strings.TrimSuffix(*token, "\""), "\"")); err != nil {
-			return nil, err
+			return core.NewStringException(err.Error()), nil
 		} else {
 			return &core.Type{String: &t}, nil
 		}

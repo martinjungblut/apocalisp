@@ -67,11 +67,7 @@ func Evaluate(node *core.Type, environment *core.Environment, convertExceptions 
 		node = &expanded
 
 		if !node.IsList() {
-			if evaluated, err := evalAst(node, environment, Evaluate, convertExceptions); err != nil {
-				wrapReturn(nil, err)
-			} else {
-				wrapReturn(evaluated, nil)
-			}
+			wrapReturn(evalAst(node, environment, Evaluate, convertExceptions))
 		} else if node.IsList() && node.IsEmptyIterable() {
 			wrapReturn(node, nil)
 		} else if node.IsList() && !node.IsEmptyIterable() {

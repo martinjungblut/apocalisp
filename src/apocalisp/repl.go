@@ -71,10 +71,10 @@ func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) {
 
 				if output, err := Rep(sexpr, environment, eval); err == nil {
 					if len(output) > 0 {
-						fmt.Printf("%s\n", output)
+						fmt.Println(output)
 					}
 				} else {
-					fmt.Printf("%s\n", err.Error())
+					fmt.Println(err.Error())
 				}
 			} else {
 				fmt.Println("\nFarewell!")

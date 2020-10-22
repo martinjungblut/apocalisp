@@ -11,11 +11,7 @@ type Environment struct {
 
 func NewEnvironment(outer *Environment, symbols []string, nodes []Type) *Environment {
 	table := make(map[string]Type)
-
-	environment := &Environment{
-		table: table,
-		outer: outer,
-	}
+	environment := &Environment{table: table, outer: outer}
 
 	for i := 0; i < len(symbols); i++ {
 		if symbols[i] == "&" {
@@ -41,10 +37,7 @@ func (env *Environment) Set(symbol string, node Type) {
 }
 
 func (env *Environment) SetCallable(symbol string, callable func(...Type) Type) {
-	env.table[symbol] = Type{
-		Callable: &callable,
-		Symbol:   &symbol,
-	}
+	env.table[symbol] = Type{Callable: &callable, Symbol: &symbol}
 }
 
 func (env *Environment) Find(symbol string) *Environment {
