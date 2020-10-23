@@ -2,12 +2,11 @@ package apocalisp
 
 import (
 	"apocalisp/core"
-	"apocalisp/parser"
 	"errors"
 	"fmt"
 )
 
-func Rep(sexpr string, environment *core.Environment, eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) (string, error) {
+func Rep(sexpr string, environment *core.Environment, eval func(*core.Type, *core.Environment, bool) (*core.Type, error), parser core.Parser) (string, error) {
 	// read
 	t, err := parser.Parse(sexpr)
 	if err != nil {

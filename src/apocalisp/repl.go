@@ -2,12 +2,12 @@ package apocalisp
 
 import (
 	"apocalisp/core"
-	"apocalisp/parser"
 	"fmt"
-	"github.com/peterh/liner"
 	"os"
 	"path/filepath"
 	"runtime/debug"
+
+	"github.com/peterh/liner"
 )
 
 func withLiner(handler func(*liner.State)) {
@@ -18,7 +18,7 @@ func withLiner(handler func(*liner.State)) {
 	handler(state)
 }
 
-func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) {
+func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), parser core.Parser) {
 	// decrease max stack size to make TCO-related tests useful
 	debug.SetMaxStack(1 * 1024 * 1024)
 
@@ -46,7 +46,7 @@ func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) {
 	}()
 
 	// environment
-	environment := DefaultEnvironment(parser.Parser{}, eval)
+	environment := DefaultEnvironment(parser, eval)
 
 	argv := core.NewList()
 	for i := range os.Args {
@@ -57,19 +57,19 @@ func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) {
 	environment.Set("*ARGV*", *argv)
 	environment.Set("*host-language*", *core.NewString("apocalisp"))
 
-	_, _ = Rep(`(def! not (fn* (a) (if a false true)))`, environment, eval)
-	_, _ = Rep(`(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))`, environment, eval)
-	_, _ = Rep(`(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw "odd number of forms to cond")) (cons 'cond (rest (rest xs)))))))`, environment, eval)
+	_, _ = Rep(`(def! not (fn* (a) (if a false true)))`, environment, eval, parser)
+	_, _ = Rep(`(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))`, environment, eval, parser)
+	_, _ = Rep(`(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw "odd number of forms to cond")) (cons 'cond (rest (rest xs)))))))`, environment, eval, parser)
 
 	if len(os.Args) >= 2 {
-		_, _ = Rep(fmt.Sprintf(`(load-file "%s")`, os.Args[1]), environment, eval)
+		_, _ = Rep(fmt.Sprintf(`(load-file "%s")`, os.Args[1]), environment, eval, parser)
 	} else {
-		_, _ = Rep(`(println (str "Mal [" *host-language* "]"))`, environment, eval)
+		_, _ = Rep(`(println (str "Mal [" *host-language* "]"))`, environment, eval, parser)
 		for {
 			if sexpr, err := line.Prompt("user> "); err == nil {
 				line.AppendHistory(sexpr)
 
-				if output, err := Rep(sexpr, environment, eval); err == nil {
+				if output, err := Rep(sexpr, environment, eval, parser); err == nil {
 					if len(output) > 0 {
 						fmt.Println(output)
 					}
