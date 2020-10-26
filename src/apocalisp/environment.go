@@ -270,6 +270,9 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 			if it := args[0].AsIterable(); len(it) >= 1 {
 				return it[0]
 			}
+			if args[0].IsException() {
+				return args[0]
+			}
 		}
 		return *core.NewNil()
 	})
@@ -278,6 +281,9 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		if len(args) >= 1 {
 			if it := args[0].AsIterable(); len(it) >= 2 {
 				return *core.NewList(it[1:]...)
+			}
+			if args[0].IsException() {
+				return args[0]
 			}
 		}
 		return *core.NewList()
@@ -299,7 +305,11 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("throw", func(args ...core.Type) core.Type {
 		if len(args) >= 1 {
-			return *core.NewException(args[0])
+			if args[0].IsException() {
+				return *core.NewException(*args[0].AsException())
+			} else {
+				return *core.NewException(args[0])
+			}
 		}
 		return *core.NewNil()
 	})
@@ -312,7 +322,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 			if first.IsFunction() {
 				for _, e := range iterable {
 					if rval := first.CallFunction(e); rval.IsException() {
-						return *rval.Exception
+						return rval
 					} else {
 						result.Append(rval)
 					}
@@ -320,7 +330,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 			} else if first.IsCallable() {
 				for _, e := range iterable {
 					if rval := first.CallCallable(e); rval.IsException() {
-						return *rval.Exception
+						return rval
 					} else {
 						result.Append(rval)
 					}
@@ -335,6 +345,10 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		if len(args) >= 2 {
 			lastIndex := len(args) - 1
 			first, middle, last := args[0], args[1:lastIndex], args[lastIndex]
+
+			if first.IsException() {
+				return first
+			}
 
 			if (first.IsFunction() || first.IsCallable()) && last.IsIterable() {
 				for _, e := range last.AsIterable() {

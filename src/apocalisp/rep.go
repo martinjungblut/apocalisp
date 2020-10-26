@@ -30,19 +30,12 @@ func NoEval(node *core.Type, environment *core.Environment, convertExceptions bo
 }
 
 func Evaluate(node *core.Type, environment *core.Environment, convertExceptions bool) (*core.Type, error) {
-	var (
-		lexicalReturnValue *core.Type
-		lexicalError       error
-	)
-	wrapReturn := func(node *core.Type, err error) {
-		if node != nil {
-			lexicalReturnValue = node
-		}
-		if err != nil {
-			lexicalError = err
-		}
-	}
+	var lexicalReturnValue *core.Type
+	var lexicalError error
 	processReturn := func() (*core.Type, error) {
+		if lexicalError != nil {
+			return nil, lexicalError
+		}
 		if lexicalReturnValue != nil {
 			if lexicalReturnValue.IsException() && convertExceptions {
 				return nil, errors.New(lexicalReturnValue.ToString(false))
@@ -50,10 +43,15 @@ func Evaluate(node *core.Type, environment *core.Environment, convertExceptions 
 				return lexicalReturnValue, nil
 			}
 		}
-		if lexicalError != nil {
-			return nil, lexicalError
-		}
 		return nil, errors.New("Error: Unexpected behavior.")
+	}
+	wrapReturn := func(node *core.Type, err error) {
+		if err != nil {
+			lexicalError = err
+		}
+		if node != nil {
+			lexicalReturnValue = node
+		}
 	}
 
 	// TCO loop
@@ -184,7 +182,7 @@ func tcoSpecialFormFn(eval func(*core.Type, *core.Environment, bool) (*core.Type
 		callable := func(args ...core.Type) core.Type {
 			newEnvironment := core.NewEnvironment(*environment, symbols, args)
 			if result, err := eval(&rest[1], newEnvironment, convertExceptions); err != nil {
-				return *core.NewString(err.Error())
+				return *core.NewStringException(err.Error())
 			} else {
 				return *result
 			}
@@ -278,7 +276,12 @@ func specialFormTryCatch(eval func(*core.Type, *core.Environment, bool) (*core.T
 			catchexp := rest[1].AsIterable()
 			if e.IsException() && len(catchexp) == 3 && catchexp[0].CompareSymbol("catch*") && catchexp[1].IsSymbol() {
 				symbol, body := catchexp[1].AsSymbol(), catchexp[2]
-				return eval(&body, core.NewEnvironment(environment, []string{symbol}, []core.Type{*e}), false)
+				result, nerr := eval(&body, core.NewEnvironment(environment, []string{symbol}, []core.Type{*e}), false)
+				if result.IsException() && result.AsException() == e.AsException() {
+					return result.AsException(), nerr
+				} else {
+					return result, nerr
+				}
 			} else {
 				return e, nil
 			}

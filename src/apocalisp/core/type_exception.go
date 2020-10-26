@@ -12,6 +12,6 @@ func (node *Type) IsException() bool {
 	return node.Exception != nil
 }
 
-func (node *Type) AsException() Type {
-	return *node.Exception
+func (node *Type) AsException() *Type {
+	return node.Exception
 }

@@ -130,6 +130,14 @@ func compare(first Type, second Type) bool {
 		return first.AsSymbol() == second.AsSymbol()
 	}
 
+	if first.IsFunction() && second.IsFunction() {
+		return first.Function == second.Function
+	}
+
+	if first.IsCallable() && second.IsCallable() {
+		return first.Callable == second.Callable
+	}
+
 	return false
 }
 
