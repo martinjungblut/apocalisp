@@ -269,26 +269,19 @@ func specialFormTryCatch(eval func(*core.Type, *core.Environment, bool) (*core.T
 		return nil, errors.New("Error: Invalid syntax for `try*!`.")
 	}
 
-	if e, err := eval(&rest[0], environment, false); err != nil {
+	e, err := eval(&rest[0], environment, false)
+
+	if err != nil {
 		return nil, err
-	} else {
-		if len(rest) >= 2 {
-			catchexp := rest[1].AsIterable()
-			if e.IsException() && len(catchexp) == 3 && catchexp[0].CompareSymbol("catch*") && catchexp[1].IsSymbol() {
-				symbol, body := catchexp[1].AsSymbol(), catchexp[2]
-				result, nerr := eval(&body, core.NewEnvironment(environment, []string{symbol}, []core.Type{*e}), false)
-				if result.IsException() && result.AsException() == e.AsException() {
-					return result.AsException(), nerr
-				} else {
-					return result, nerr
-				}
-			} else {
-				return e, nil
-			}
-		} else {
-			return e, nil
+	} else if len(rest) >= 2 {
+		catchexp := rest[1].AsIterable()
+		if e.IsException() && len(catchexp) == 3 && catchexp[0].CompareSymbol("catch*") && catchexp[1].IsSymbol() {
+			symbol, body := catchexp[1].AsSymbol(), catchexp[2]
+			return eval(&body, core.NewEnvironment(environment, []string{symbol}, []core.Type{*e.AsException()}), false)
 		}
 	}
+
+	return e, nil
 }
 
 func evalCallable(node *core.Type) (*core.Type, error) {
