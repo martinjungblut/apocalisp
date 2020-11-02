@@ -10,7 +10,7 @@ import (
 	"github.com/peterh/liner"
 )
 
-func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environment, bool) (*core.Type, error)) *core.Environment {
+func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environment) (*core.Type, error)) *core.Environment {
 	environment := core.NewEnvironment(nil, []string{}, []core.Type{})
 
 	environment.SetCallable("+", func(inputs ...core.Type) core.Type {
@@ -371,7 +371,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("eval", func(args ...core.Type) core.Type {
 		if len(args) >= 1 {
-			if r, err := eval(&args[0], environment, false); err != nil {
+			if r, err := eval(&args[0], environment); err != nil {
 				return *core.NewStringException(err.Error())
 			} else {
 				return *r

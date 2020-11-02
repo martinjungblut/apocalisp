@@ -18,7 +18,7 @@ func withLiner(handler func(*liner.State)) {
 	handler(state)
 }
 
-func Repl(eval func(*core.Type, *core.Environment, bool) (*core.Type, error), parser core.Parser) {
+func Repl(eval func(*core.Type, *core.Environment) (*core.Type, error), parser core.Parser) {
 	// decrease max stack size to make TCO-related tests useful
 	debug.SetMaxStack(1 * 1024 * 1024)
 
