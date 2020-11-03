@@ -136,9 +136,15 @@ func tcoSpecialFormDo(eval func(*core.Type, *core.Environment) (*core.Type, erro
 		return nil, errors.New("Error: Invalid syntax for `do`.")
 	} else {
 		toEvaluate := rest[:len(rest)-1]
-		if _, err := evalAst(&core.Type{List: &toEvaluate}, *environment, eval); err != nil {
+		if elements, err := evalAst(&core.Type{List: &toEvaluate}, *environment, eval); err != nil {
 			return nil, err
 		} else {
+			for _, element := range elements.AsIterable() {
+				if element.IsException() {
+					*node = &element
+					return nil, nil
+				}
+			}
 			*node = &rest[len(rest)-1]
 			return nil, nil
 		}

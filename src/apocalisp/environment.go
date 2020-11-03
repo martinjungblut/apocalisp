@@ -221,13 +221,17 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 			if node.IsAtom() && callable.IsCallable() {
 				result := callable.CallCallable(fargs...)
-				node.SetAtom(result)
+				if !result.IsException() {
+					node.SetAtom(result)
+				}
 				return result
 			}
 
 			if node.IsAtom() && callable.IsFunction() {
 				result := callable.CallFunction(fargs...)
-				node.SetAtom(result)
+				if !result.IsException() {
+					node.SetAtom(result)
+				}
 				return result
 			}
 		}
@@ -510,9 +514,15 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 		if len(args) >= 1 && args[0].IsHashmap() {
 			newHashmap := core.NewHashmap().AsHashmap()
 			for key, value := range args[0].AsHashmap() {
+				if value.IsException() {
+					return value
+				}
 				newHashmap[key] = value
 			}
 			for key, value := range core.NewHashmapFromSequence(args[1:]).AsHashmap() {
+				if value.IsException() {
+					return value
+				}
 				newHashmap[key] = value
 			}
 			return core.Type{Hashmap: &newHashmap}
