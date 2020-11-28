@@ -3,6 +3,7 @@ package core
 import (
 	"apocalisp/escaping"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 )
@@ -11,8 +12,8 @@ type Type struct {
 	Nil       bool
 	Exception *Type
 	Boolean   *bool
-	Integer   *int64
-	Float     *float64
+	Integer   *big.Int
+	Float     *big.Float
 	Symbol    *string
 	String    *string
 	List      *[]Type
@@ -62,9 +63,9 @@ func (node Type) ToString(readably bool) string {
 	} else if node.IsBoolean() {
 		return strconv.FormatBool(node.AsBoolean())
 	} else if node.IsInteger() {
-		return fmt.Sprintf("%d", node.AsInteger())
+		return fmt.Sprintf("%s", node.AsInteger().Text(10))
 	} else if node.IsFloat() {
-		return fmt.Sprintf("%f", node.AsFloat())
+		return fmt.Sprintf("%s", node.AsFloat().Text('g', 4096))
 	} else if node.IsCallable() || node.IsFunction() {
 		return "#<function>"
 	} else if node.IsSymbol() {
@@ -115,7 +116,7 @@ func compare(first Type, second Type) bool {
 	}
 
 	if first.IsNumber() && second.IsNumber() {
-		return first.AsNumber() == second.AsNumber()
+		return first.AsNumber().Cmp(second.AsNumber()) == 0
 	}
 
 	if first.IsString() && second.IsString() {

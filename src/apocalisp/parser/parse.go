@@ -70,12 +70,8 @@ func readSequence(reader *reader) (*[]core.Type, error) {
 }
 
 func readAtom(token *string) (*core.Type, error) {
-	if i, err := strconv.ParseInt(*token, 10, 64); err == nil {
-		return &core.Type{Integer: &i}, nil
-	}
-
-	if f, err := strconv.ParseFloat(*token, 64); err == nil {
-		return &core.Type{Float: &f}, nil
+	if number, ok := core.ParseNumber(*token); ok {
+		return number, nil
 	}
 
 	if *token == "nil" {

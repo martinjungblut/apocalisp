@@ -4,6 +4,7 @@ import (
 	"apocalisp/core"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"strings"
 	"time"
 
@@ -14,57 +15,58 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment := core.NewEnvironment(nil, []string{}, []core.Type{})
 
 	environment.SetCallable("+", func(inputs ...core.Type) core.Type {
-		var result float64
+		result := big.NewFloat(0)
+
 		for _, input := range inputs {
-			result += input.AsNumber()
+			result = result.Add(result, input.AsNumber())
 		}
 
-		val := core.Type{Float: &result}
+		val := core.Type{Float: result}
 		return *val.CoerceNumber()
 	})
 
 	environment.SetCallable("-", func(inputs ...core.Type) core.Type {
-		var result float64
+		result := big.NewFloat(0)
 		if len(inputs) >= 1 {
 			result = inputs[0].AsNumber()
 		}
 		if len(inputs) >= 2 {
 			for _, input := range inputs[1:] {
-				result -= input.AsNumber()
+				result = result.Sub(result, input.AsNumber())
 			}
 		}
 
-		val := core.Type{Float: &result}
+		val := core.Type{Float: result}
 		return *val.CoerceNumber()
 	})
 
 	environment.SetCallable("/", func(inputs ...core.Type) core.Type {
-		var result float64
+		result := big.NewFloat(0)
 		if len(inputs) >= 1 {
 			result = inputs[0].AsNumber()
 		}
 		if len(inputs) >= 2 {
 			for _, input := range inputs[1:] {
-				result /= input.AsNumber()
+				result = new(big.Float).Quo(result, input.AsNumber())
 			}
 		}
 
-		val := core.Type{Float: &result}
+		val := core.Type{Float: result}
 		return *val.CoerceNumber()
 	})
 
 	environment.SetCallable("*", func(inputs ...core.Type) core.Type {
-		var result float64
+		result := big.NewFloat(0)
 		if len(inputs) >= 1 {
 			result = inputs[0].AsNumber()
 		}
 		if len(inputs) >= 2 {
 			for _, input := range inputs[1:] {
-				result *= input.AsNumber()
+				result = result.Mul(result, input.AsNumber())
 			}
 		}
 
-		val := core.Type{Float: &result}
+		val := core.Type{Float: result}
 		return *val.CoerceNumber()
 	})
 
@@ -85,8 +87,8 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	})
 
 	environment.SetCallable("count", func(args ...core.Type) core.Type {
-		value := int64(len(args[0].AsIterable()))
-		return core.Type{Integer: &value}
+		value := len(args[0].AsIterable())
+		return *core.NewNumber(float64(value))
 	})
 
 	environment.SetCallable("=", func(args ...core.Type) core.Type {
@@ -99,7 +101,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable("<", func(args ...core.Type) core.Type {
 		result := false
 		if len(args) == 2 {
-			result = args[0].AsNumber() < args[1].AsNumber()
+			result = args[0].NumberLessThan(args[1].AsNumber())
 		}
 		return *core.NewBoolean(result)
 	})
@@ -107,7 +109,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable("<=", func(args ...core.Type) core.Type {
 		result := false
 		if len(args) == 2 {
-			result = args[0].AsNumber() <= args[1].AsNumber()
+			result = args[0].NumberLessEqualThan(args[1].AsNumber())
 		}
 		return *core.NewBoolean(result)
 	})
@@ -115,7 +117,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable(">", func(args ...core.Type) core.Type {
 		result := false
 		if len(args) == 2 {
-			result = args[0].AsNumber() > args[1].AsNumber()
+			result = args[0].NumberGreaterThan(args[1].AsNumber())
 		}
 		return *core.NewBoolean(result)
 	})
@@ -123,7 +125,7 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 	environment.SetCallable(">=", func(args ...core.Type) core.Type {
 		result := false
 		if len(args) == 2 {
-			result = args[0].AsNumber() >= args[1].AsNumber()
+			result = args[0].NumberGreaterEqualThan(args[1].AsNumber())
 		}
 		return *core.NewBoolean(result)
 	})
@@ -295,12 +297,15 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("nth", func(args ...core.Type) core.Type {
 		if len(args) >= 2 {
-			if it, nth := args[0].AsIterable(), args[1].AsInteger(); args[1].IsInteger() {
+			if it, nth := args[0].AsIterable(), args[1].AsNumber(); args[1].IsNumber() {
+				f, _ := nth.Float64()
+				i := int(f)
+
 				// TODO: add test to ensure nth requires positive indexes
-				if nth < 0 || nth >= int64(len(it)) {
-					return *core.NewStringException(fmt.Sprintf("Invalid index '%d' for iterable of length '%d'.", nth, len(it)))
+				if i < 0 || i >= len(it) {
+					return *core.NewStringException(fmt.Sprintf("Invalid index '%d' for iterable of length '%d'.", i, len(it)))
 				} else {
-					return it[nth]
+					return it[i]
 				}
 			}
 		}
@@ -640,8 +645,8 @@ func DefaultEnvironment(parser core.Parser, eval func(*core.Type, *core.Environm
 
 	environment.SetCallable("time-ms", func(args ...core.Type) core.Type {
 		time.Sleep(time.Millisecond)
-		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
-		return core.Type{Integer: &timestamp}
+		timestamp := float64(time.Now().UnixNano() / int64(time.Millisecond))
+		return *core.NewNumber(timestamp)
 	})
 
 	environment.SetCallable("meta", func(args ...core.Type) core.Type {
