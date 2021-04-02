@@ -7,3 +7,5 @@
 !src
 !src/step**
 !src/apocalisp**
+!examples
+!examples/**
